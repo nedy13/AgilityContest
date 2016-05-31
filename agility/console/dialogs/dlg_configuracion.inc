@@ -1,7 +1,7 @@
 <!-- 
 dlg_configuracion.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -23,13 +23,11 @@ $config =Config::getInstance();
 
 <!-- Formularios del menu de configuracion de la aplicacion -->
 
- <div id="config-panel" class="easyui-panel" style="width:550px;height:300px;padding:10px 20px"
+ <div id="config-panel" class="easyui-panel" style="width:800px;height:300px;padding:10px 20px"
 	data-options="fit:true,footer:'#config-dlg-buttons',onOpen:loadConfig">
 	<form id="config-form" name="configuracion" class="easyui-form">
 	<div id="config-tabs" class="easyui-tabs" data-options="tabPosition:'left'" style="width:100%;height:auto">
 		<input id="config-Operation" type="hidden" name="Operation" value="saveConfig"/>
-		<!-- TODO: Los parametros de la base de datos solo se deben presentar en el primer arranque -->
-
 		<div title="<?php _e('Desktop'); ?>" style="padding:10px">
 			<h3><?php _e('Desktop look and feel'); ?></h3>
 			<label for="config_theme"><?php _e('Dekstop theme'); ?></label>
@@ -59,16 +57,24 @@ $config =Config::getInstance();
 			<label for="tablet_beep"><?php _e('Emit beep on key pressed'); ?></label>
 			<input type="hidden" name="tablet_beep" value="0"/>
 			<input id="tablet_beep" name="tablet_beep" type="checkbox" value="1"/><br />
+
 			<label for="tablet_dnd"><?php _e('Allow modify starting order from tablet'); ?></label>
 			<input type="hidden" name="tablet_dnd" value="0"/>
 			<input id="tablet_dnd" name="tablet_dnd" type="checkbox" value="1"/><br />
+
 			<label for="tablet_next"><?php _e('Accept button save data and goes to next participant'); ?></label>
 			<input type="hidden" name="tablet_next" value="0"/>
 			<input id="tablet_next" name="tablet_next" type="checkbox" value="1"/><br />
+
 			<label for="tablet_keyboard"><?php _e('Enable keyboard when running in laptop/netbook'); ?></label>
 			<input type="hidden" name="tablet_keyboard" value="0"/>
 			<input id="tablet_keyboard" name="tablet_keyboard" type="checkbox" value="1"/><br />
 
+			<label for="tablet_dblckick"><?php _e('Action at double click in round list'); ?></label>
+			<select id="tablet_dblclick" name="tablet_dblckick">
+				<option value="0"><?php _e('Cancel and select');?></option>
+				<option value="1" selected="selected"><?php _e('Save and select');?></option>
+			</select><br />
 
 			<h3><?php _e('Electronic chronometer behaviour'); ?></h3>
 
@@ -89,16 +95,14 @@ $config =Config::getInstance();
             <input id="tcd3" type="radio" name="tablet_countdown" value="3"/><?php _e('Eliminate team'); ?><br />
 
 			<label for="crono_resync"><?php _e('On sensor detection when manual chrono is active'); ?></label>
-			<input id="crs1" type="radio" name="crono_resync" value="0"  checked="checked"/><?php _e('Restart counter from zero'); ?>
-			<input id="crs2" type="radio" name="crono_resync" value="1"/><?php _e('Continue with manual chrono count'); ?>
+			<input id="crs1" type="radio" name="crono_resync" value="0"  checked="checked"/><?php _e('Start electronic chrono'); ?>
+			<input id="crs2" type="radio" name="crono_resync" value="1"/><?php _e('Continue with manual chrono'); ?>
 		</div>
 		
 		<div title="<?php _e('VideoWall'); ?>" style="padding:10px">
 			<h3><?php _e('Video wall configurable parameters'); ?></h3>
-			<label for="vw_polltime"><?php _e('Refresh period (seg.)'); ?></label>
+			<label for="vw_polltime"><?php _e('AutoScroll period (seg.)'); ?></label>
 			<input id="vw_polltime" name="vw_polltime" type="text" size="2" value="5"/><br />
-			<label for="vw_alpha"><?php _e('Transparency level for OnScreenDisplay'); ?></label>
-			<input id="vw_alpha" name="vw_alpha" type="text" size="3" value="0.5"/> (0.0-1.0)<br />
 			<label for="vw_hdrbg1"><?php _e('Background color for main header'); ?></label>
 			<input id="vw_hdrbg1" name="vw_hdrbg1" type="color" value="#0000ff"/><br />
 			<label for="vw_hdrfg1"><?php _e('Text color for main header'); ?></label>
@@ -118,10 +122,32 @@ $config =Config::getInstance();
 			<input id="vw_rowcolor1" name="vw_rowcolor1" type="color" value="#e0e0e0"/><br />
 			<label for="vw_rowcolor2"><?php _e('Background color for tables odd rows'); ?></label>
 			<input id="vw_rowcolor2" name="vw_rowcolor2" type="color" value="#c0c0c0"/><br />
+
+			<h3><?php _e('Live Stream configurable parameters'); ?></h3>
+			<label for="vw_alpha"><?php _e('Transparency level for OnScreenDisplay'); ?></label>
+			<input id="vw_alpha" name="vw_alpha" type="text" size="3" value="0.5"/> (0.0-1.0)<br />
+			<label for="vw_chromakey"><?php _e('Color for Chroma Keyer'); ?></label>
+			<input id="vw_chromakey" name="vw_chromakey" type="color" value="#00ff00"/><br />
+			<label for="vw_dataposition"><?php _e('Timming data screen location'); ?></label>
+			<select id="vw_dataposition" name="vw_dataposition">
+				<option value="0"><?php _e('Not visible');?></option>
+				<option value="1" selected="selected"><?php _e('Upper right corner');?></option>
+				<option value="2"><?php _e('Lower right corner');?></option>
+				<option value="3"><?php _e('Next to competitor info');?></option>
+			</select><br />
+
 		</div>
 		
 		<div title="<?php _e('Reports'); ?>" style="padding:10px">
 			<h3><?php _e('PDF forms and reports generation'); ?></h3>
+			<label for="pdf_fontfamily"><?php _e('Font family'); ?></label>
+			<select id="pdf_fontfamily" name="pdf_fontfamily">
+				<option value="DejaVu" selected="selected">DejaVu (UTF-8)</option>
+				<option value="Free">GNU Free (UTF-8)</option>
+				<option value="Courier">Courier (iso-latin1)</option>
+				<option value="Helvetica">Helvetica (iso-latin1)</option>
+				<option value="Times">Times (iso-latin1)</option>
+			</select><br />
 			<label for="pdf_journeys"><?php _e('Show journey info when printing catalog'); ?></label>
 			<input type="hidden" name="pdf_journeys" value="0"/>
 			<input id="pdf_journeys" name="pdf_journeys" type="checkbox" value="1"/><br />
@@ -158,16 +184,29 @@ $config =Config::getInstance();
 		
 		<div title="<?php _e('Internet'); ?>" style="padding:10px">
 		<h3><?php _e('Public access from internet'); ?></h3>
+			<label for="web_refreshtime"><?php _e('Data auto-refresh interval'); ?></label>
+			<input type="hidden" name="web_refreshtime" value="0"/> <!-- trick for select with value 0 -->
+			<select id="web_refreshtime" name="web_refreshtime">
+				<option value="0" selected="selected"><?php _e('No refresh'); ?></option>
+				<option value="30">30 sec.</option>
+				<option value="45">45 sec.</option>
+				<option value="60">1 min.</option>
+				<option value="90">1,5 min.</option>
+				<option value="120">2 min.</option>
+			</select><br />
 		</div>
 				
-		<div title="<?php _e('System'); ?>" style="padding:10px">
+		<div title="<?php _e('General'); ?>" style="padding:10px">
 			<h3><?php _e('General configuration'); ?></h3>
-			<label for="config_lang"><?php _e('Language'); ?></label>
+			<label for="config_lang"><?php _e('Default language'); ?></label>
 			<select id="config_lang" name="lang">
 				<option value="es_ES" selected="selected"><?php _e('Spanish'); ?></option>
 				<option value="en_US"><?php _e('English'); ?></option>
 				<option value="de_DE"><?php _e('German'); ?></option>
 			</select><br />
+			<label for="accept_lang"><?php _e('Choose language from browser preferences'); ?></label>
+			<input type="hidden" name="accept_lang" value="0"/> <!-- trick for checkboxes -->
+			<input type="checkbox" name="accept_lang" id="accept_lang" value="1"/><br />
 			<label for="debug_level"><?php _e('Debug level'); ?></label>
 			<select id="debug_level" name="debug_level">
 				<!-- "PANIC","ALERT","ERROR","WARN","NOTICE","INFO","DEBUG","TRACE","ALL" -->
@@ -186,13 +225,15 @@ $config =Config::getInstance();
             <input type="checkbox" name="register_events" id="register_events" value="1"/><br />
 
 			<label for="event_printer"><?php _e('Printer device name to write tablet reports'); ?></label>
-			<input id="event_printer" name="event_printer" type="text" size="16" value=""/> <?php _e('Paper size'); ?>:
+			<input id="event_printer" name="event_printer" type="text" size="10" value=""/> <?php _e('Paper size'); ?>:
 			<label for="wide_printer58" style="width:70px;">
 				<input type="radio" id="wide_printer58" name="wide_printer" value="0" checked="checked"/> 58mm
 			</label>
 			<label for="wide_printer80" style="width:70px;">
 				<input type="radio" id="wide_printer80" name="wide_printer" value="1"/>	80mm
-			</label><br />
+			</label>
+			<input id="printer-checkBtn" type="button" value="<?php _e("Check");?>" onclick="printerCheck();"/>
+			<br />
 
             <label for="reset_events"><?php _e('Clear event registration on tablet init session'); ?></label>
             <input type="hidden" name="reset_events" value="0"/> <!-- trick for checkboxes -->
@@ -207,10 +248,23 @@ $config =Config::getInstance();
 			<label for="crono_milis" style="width:130px;margin-top:5px;">
 				<input type="radio" id="crono_milis" name="crono_miliseconds" value="1"/><?php _e('millis'); ?>
 			</label><br />
+		</div>
+
+		<div title="<?php _e('System'); ?>" style="padding:10px">
 			<h3><?php _e('Additional server information'); ?></h3>
 			<label for="ip_address"><?php _e('IP address(es)'); ?></label>
 			<input id="ip_address" name="ip_address" type="text" readonly="readonly" size="45"
 				   value="<?php $a=new networkInterfaces(); echo implode(", ",$a->get_interfaces());?>" />
+			<br />
+			<h3><?php _e('Save and Restore configuration'); ?></h3>
+			<label for="config_backup"><?php _e('Download configuration to file'); ?></label>
+			<input type="button" class="icon_button icon-db_backup" id="config_backup" name="config_backup" value="<?php _e('Backup');?>" onclick="backupConfig();">
+			<br/>
+			<label for="config_restore"><?php _e('Restore configuration from file'); ?></label>
+			<input type="button" class="icon_button icon-db_restore" id="config_restore" name="config_restore" value="<?php _e('Restore');?>" onclick="restoreConfig();">
+			<input type="file" class="icon_button icon-search" id="config_restoreFile"
+				   name="restoreFile" accept=".ini,text/plain" required="required" style="width:365px;" value="<?php _e('Search');?>" onchange="loadConfigFile(this)">
+			<input id="config_restoreData" type="hidden" name="config_restoreData" value="">
 		</div>
 	</div>
 	</form>
@@ -235,6 +289,7 @@ $config =Config::getInstance();
 	addTooltip($('#config-resetBtn').linkbutton(),'<?php _e("Cancel changes. Restore information from server"); ?>');
 	addTooltip($('#config-defaultBtn').linkbutton(),'<?php _e("Factory reset. Configure with default data"); ?>');
 	addTooltip($('#config-okBtn').linkbutton(),'<?php _e("Accept changes. Save as new configuration"); ?>');
+	addTooltip($('#printer-checkBtn').linkbutton(),'<?php _e("Send sample report to check printer"); ?>');
 	
 	function saveConfig() {
 		$('#config-Operation').val('saveConfig');
@@ -259,6 +314,35 @@ $config =Config::getInstance();
 	    });
 	}	
 
+	function printerCheck() {
+		$('#config-Operation').val('printerCheck');
+		var frm = $('#config-form');
+		$.ajax({
+			type: 'GET',
+			url: '/agility/server/adminFunctions.php',
+			data: frm.serialize(),
+			dataType: 'json',
+			success: function (result) {
+				if (result.errorMsg){
+					$.messager.show({ width:300, height:200, title: 'Error', msg: result.errorMsg });
+				} else {
+					$.messager.alert({
+						title: '<?php _e("Check"); ?>',
+						msg: '<?php _e("A test page has been sent to event recording printer"); ?>'+" <br />"+
+						'<?php _e("Please check for proper output"); ?> '+ "<br /><br/>" +
+						'<?php _e("Remember to save changes before exiting"); ?>',
+						icon: "info",
+						width: 500
+					});
+					loadConfiguration();
+				}
+			}
+		});
+	}
+
+	/**
+	 * perform a configuration factory reset
+	 */
 	function defaultConfig() {
 		$.messager.confirm('<?php _e("Confirm"); ?>','<?php _e("Restore factory default values. Sure?"); ?>',function(r){
 			if (r) {
@@ -266,8 +350,79 @@ $config =Config::getInstance();
 			}
 		});
 	}
-	
+
+	/**
+	 * discard config changes and restore browser configuration from server config
+	 */
 	function loadConfig() {
 		$('#config-form').form('load','/agility/server/adminFunctions.php?Operation=loadConfig');
 	}
+
+	/**
+	 * Download a backup of configuration file
+	 */
+	function backupConfig() {
+		$.fileDownload(
+			'/agility/server/adminFunctions.php',
+			{
+				httpMethod: 'GET',
+				data: {
+					Operation: 'backupConfig'
+				},
+				preparingMessageHtml:'<?php _e("Downloading configuration, please wait"); ?> ...',
+				failMessageHtml:'<?php _e("There was a problem in configuration download. Please try again"); ?>'
+			}
+		);
+		return false; //this is critical to stop the click event which will trigger a normal file download!
+	}
+
+	/**
+	 * Upload and store configuration file
+	 */
+	function restoreConfig() {
+		var data=$('#config_restoreData').val();
+		if (data=="") {
+			$.messager.alert("<?php _e('Error');?>","<?php _e('No config file selected');?>",'error');
+			return false;
+		}
+		$.ajax({
+			type:'POST', // use post to send file
+			url:"/agility/server/adminFunctions.php",
+			dataType:'json',
+			data: { Operation: 'restoreConfig', Data: data },
+			contentType: 'application/x-www-form-urlencoded;charset=UTF-8',
+			success: function(res) {
+				if (res.errorMsg){
+					$.messager.show({ width:300, height:150, title: '<?php _e('Restore configuration from file error'); ?><br />', msg: res.errorMsg });
+				}
+				$.messager.alert({
+					title: '<?php _e("Restore"); ?>',
+					msg: '<?php _e("Configuration file successfully restored"); ?> <br />'+
+					'<?php _e("You should close session and reload page"); ?> <br/>' +
+					'<?php _e("for changes to become active"); ?><br/><hr/><br/>'+res.data,
+					icon: "info",
+					width: 400
+				});
+				loadConfiguration();
+			},
+			error: function(XMLHttpRequest,textStatus,errorThrown) {
+				$.messager.alert("Restore configuration from file error","Error: "+textStatus + " "+ errorThrown,'error' );
+			}
+		});
+	}
+
+	/**
+	 * Load configuration file from client and store in browser
+	 * @param input
+	 */
+	function loadConfigFile(input) {
+		if (input.files && input.files[0]) {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				$('#config_restoreData').val(e.target.result);
+			};
+			reader.readAsDataURL(input.files[0]);
+		}
+	}
+
 </script>

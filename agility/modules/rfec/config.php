@@ -17,15 +17,32 @@ class RFEC extends Federations {
             'International' => 0,
             'WideLicense' => true, // some federations need extra print space to show license ID
             'Recorridos' => array('Common course',"Standard + Medium / Small + Toy","Separate courses"),
+            'ListaGradosShort' => array(
+                '-' => 'Sin especificar',
+                'Baja' => 'Baja',
+                'GI' => 'G1',
+                'GII'=> 'G2',
+                'GIII' => 'G3',
+                'P.A.' => 'G0',
+                'P.B.' => 'P.B.', // "perro en blanco"
+                'Ret.' => 'Ret.'
+            ),
             'ListaGrados'    => array (
                 '-' => 'Sin especificar',
-                'Baja' => ' ',
                 'GI' => 'Promocion (G1)',
                 'GII'=> 'Competicion (G2)',
-                'GIII' => 'Grado III', // no existe
+                // 'GIII' => 'Grado 3',
                 'P.A.' => 'Iniciacion (G0)',
                 'P.B.' => 'Perro en Blanco',
-                'Ret.' => 'Retirado',
+                'Baja' => 'Baja temporal ',
+                'Ret.' => 'Retirado'
+            ),
+            'ListaCategoriasShort' => array (
+                '-' => '-',
+                'L' => 'L - 60',
+                'M' => 'M - 50',
+                'S' => 'S - 40',
+                'T' => 'T - 30'
             ),
             'ListaCategorias' => array (
                 '-' => 'Sin especificar',
@@ -58,7 +75,8 @@ class RFEC extends Federations {
                 "ST"=>"Small/Toy",
                 "MS"=>"Medium/Small",
                 "LMS" => 'Conjunta LMS',
-                "LMST",'Conjunta LMST'
+                "LMST" => 'Conjunta LMST',
+                "-LMST" => ''
             )
         );
     }
@@ -67,7 +85,7 @@ class RFEC extends Federations {
      * Evalua la calificacion parcial del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $m datos de la manga
+     * @param {object} $m datos de la manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
@@ -83,8 +101,13 @@ class RFEC extends Federations {
         if ($perro['Penalizacion']<6.0) $pt1++; // 1 punto por excelente
         if ($perro['Penalizacion']==0.0) $pt1++; // 2 puntos por cero
         // puntos a los 5 primeros por manga/categoria si no estan eliminados
-        if ( ($perro['Penalizacion']<100) && ($puestocat[$cat]<=5) ) $pt1+= $ptsmanga[$puestocat[$cat]-1];
-        if ($perro['Penalizacion']>=200)  {
+        if ( ($puestocat[$cat]>0) && ($perro['Penalizacion']<100) && ($puestocat[$cat]<=5) ) $pt1+= $ptsmanga[$puestocat[$cat]-1];
+        if ($perro['Penalizacion']>=400)  {
+            $perro['Penalizacion']=400.0;
+            $perro['Calificacion'] = "-";
+            $perro['CShort'] = "-";
+        }
+        else if ($perro['Penalizacion']>=200)  {
             $perro['Penalizacion']=200.0;
             $perro['Calificacion'] = _("Not Present");
             $perro['CShort'] = _("N.P.");
@@ -103,15 +126,15 @@ class RFEC extends Federations {
             $perro['CShort'] = _("Good");
         }
         else if ($perro['Penalizacion']>=6)	{
-            $perro['Calificacion'] = _("Very good")." - ".$pt1;
+            $perro['Calificacion'] = _("V.G.")." - ".$pt1;
             $perro['CShort'] = _("V.G.");
         }
         else if ($perro['Penalizacion']>0)	{
-            $perro['Calificacion'] = _("Excellent")." - ".$pt1;
+            $perro['Calificacion'] = _("Exc")." - ".$pt1;
             $perro['CShort'] = _("Exc");
         }
         else if ($perro['Penalizacion']==0)	{
-            $perro['Calificacion'] = _("Excellent")." - ".$pt1;
+            $perro['Calificacion'] = _("Exc")." - ".$pt1;
             $perro['CShort'] = _("Exc");
         }
     }
@@ -120,12 +143,14 @@ class RFEC extends Federations {
      * Evalua la calificacion final del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
+     * @param {object} $m1 datos de la primera manga
+     * @param {object} $m2 datos de la segunda manga
      * @param {array} $c1 datos de la primera manga
      * @param {array} $c2 datos de la segunda manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
-    public function evalFinalCalification($p,$j,$c1,$c2,&$perro,$puestocat){
+    public function evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,&$perro,$puestocat){
         $grad=$perro['Grado']; // cogemos el grado
         $cat=$perro['Categoria']; // cogemos la categoria
         if ($grad!=="GII") { // solo se puntua en grado II
@@ -140,15 +165,17 @@ class RFEC extends Federations {
         if ($perro['P1']<6.0) $pt1++; // 1 punto por excelente
         if ($perro['P1']==0.0) $pt1++; // 2 puntos por cero
         // puntos a los 5 primeros por manga/categoria si no estan eliminados
-        if ( ($perro['P1']<100) && ($perro['Pcat1']<=5) ) $pt1+= $ptsmanga[$perro['Pcat1']-1];
+        if ( ($perro['Pcat1']>0) && ($perro['P1']<100) && ($perro['Pcat1']<=5) ) $pt1+= $ptsmanga[$perro['Pcat1']-1];
+        $perro['C1']=($pt1==0)?" ":strval($pt1);
         // manga 2
         $pt2=0;
         if ($c2!=null) {
             if ($perro['P2']<6.0) $pt2++; // 1 punto por excelente
             if ($perro['P2']==0.0) $pt2++; // 2 puntos por cero
             // puntos a los 5 primeros por manga/categoria si no estan eliminados
-            if ( ($perro['P2']<100) && ($perro['Pcat2']<=5) ) $pt2+= $ptsmanga[$perro['Pcat2']-1];
+            if ( ($perro['Pcat2']>0) && ($perro['P2']<100) && ($perro['Pcat2']<=5) ) $pt2+= $ptsmanga[$perro['Pcat2']-1];
         }
+        $perro['C2']=($pt2==0)?" ":strval($pt2);
         // conjunta
         $pfin=0;
         if ($puestocat[$cat]<11) {
@@ -157,10 +184,11 @@ class RFEC extends Federations {
                 $pfin=$ptsglobal[$puestocat[$cat]-1];
             }
         }
+        /** TODO: PENDIENTE DE VERIFICAR */
         // en las pruebas selectivas de caza (regional y nacional) se puntua doble
-        if ($p->Selectiva!=0) { $pt1*=2; $pt2*=2; $pfin*=2; }
+        // if ($p->Selectiva!=0) { $pt1*=2; $pt2*=2; $pfin*=2; }
         // finalmente componemos el string a presentar
-        $perro['Calificacion']=$str=strval($pt1)."-".strval($pt2)."-".strval($pfin);
+        $perro['Calificacion']=strval($pfin);
     }
 }
 ?>

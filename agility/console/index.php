@@ -46,7 +46,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 <link rel="stylesheet" type="text/css" href="/agility/css/datagrid.css" />
 <link rel="stylesheet" type="text/css" href="/agility/css/public_css.php" />
 <link rel="stylesheet" type="text/css" href="/agility/css/videowall_css.php" />
-<script src="/agility/lib/jquery-1.11.3.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/lib/jquery-1.12.3.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/jquery.easyui.min.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/locale/easyui-lang-<?php echo substr($config->getEnv('lang'),0,2);?>.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-view/datagrid-detailview.js" type="text/javascript" charset="utf-8" > </script>
@@ -54,6 +54,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-view/datagrid-groupview.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-dnd/datagrid-dnd.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/easyui-patches.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/datagrid_formatters.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-fileDownload-1.4.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/common.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/auth.js.php" type="text/javascript" charset="utf-8" > </script>
@@ -69,6 +70,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 <script src="/agility/scripts/pruebas.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/inscripciones.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/competicion.js.php" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/results_and_scores.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/printer.js.php" type="text/javascript" charset="utf-8" > </script>
 
 <script type="text/javascript">
@@ -214,8 +216,23 @@ body { font-size: 100%;	background: <?php echo $config->getEnv('easyui_bgcolor')
 	
 <!--  CUERPO PRINCIPAL DE LA PAGINA (se modifica con el menu) -->
 <div id="mycontent">
-	<div id="contenido" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false,"></div>
+	<div id="contenido" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
 </div>
+
+<!--
+	Entrada para insertar dialogos de importacion de ficheros desde excel
+	Debido a que se utilizan en varios frames, no se pueden cargar directamente desde loadcontents
+	sino que hay que cargarlos "bajo" demanda
+	Para depuracion usamos php_include()
+	 -->
+<div id="myimport">
+	<div id="importflag" style="display:none"></div> <!-- "" (empty) or "ready" -->
+	<div id="importclubes" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
+	<div id="importhandlers" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
+	<div id="importdogs" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
+	<div id="importinscriptions" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
+	<div id="importcontest" class="easyui-panel" style="background:none" data-options="width:'100%',fit:true,border:false"></div>
+</div> <!-- to be filled -->
 
 </body>
 

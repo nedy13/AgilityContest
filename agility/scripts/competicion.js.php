@@ -1,7 +1,7 @@
 /*
 competicion.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -27,216 +27,79 @@ $config =Config::getInstance();
 
 /************************** Gestion de datos de la ventana de manga activa */
 
-/* formatters generales */
-
-function formatBold(val,row,idx) { return '<span style="font-weight:bold">'+val+'</span>'; }
-function formatBoldBig(val,row,idx) { return '<span style="font-weight:bold;font-size:1.5em;">'+val+'</span>'; }
-function formatBorder(val,row,idx) { return 'border-left: 1px solid #000;'; }
-
-/* formatters para el datagrid dlg_resultadosManga */
-function formatPuesto(val,row,idx) { return '<span style="font-weight:bold">'+((row.Penalizacion>=100)?"-":val)+'</span>'; }
-function formatPuestoBig(val,row,idx) { return '<span style="font-size:1.5em;font-weight:bold">'+((row.Penalizacion>=100)?"-":val)+'</span>'; }
-function formatVelocidad(val,row,idx) { return (row.Penalizacion>=200)?"-":parseFloat(val).toFixed(1); }
-function formatTiempo(val,row,idx) { return (row.Penalizacion>=200)?"-":parseFloat(val).toFixed(ac_config.numdecs); }
-function formatPenalizacion(val,row,idx) { return parseFloat(val).toFixed(ac_config.numdecs); }
-function formatEliminado(val,row,idx) { return (row.Eliminado==0)?"":'<?php _e("Elim"); ?>'; }
-function formatNoPresentado(val,row,idx) { return (row.NoPresentado==0)?"":'<?php _e("N.P."); ?>'; }
-
-/* formaters para el frm_clasificaciones */
-function formatPuestoFinal(val,row,idx) { return '<span style="font-weight:bold">'+((row.Penalizacion>=200)?"-":val)+'</span>'; }
-function formatPuestoFinalBig(val,row,idx) { return '<span style="font-size:1.5em;font-weight:bold">'+((row.Penalizacion>=200)?"-":val)+'</span>'; }
-function formatPenalizacionFinal(val,row,idx) { return parseFloat(val).toFixed(ac_config.numdecs); }
-
-function formatV1(val,row,idx) { return (row.P1>=200)?"-":parseFloat(val).toFixed(1); }
-function formatT1(val,row,idx) { return (row.P1>=200)?"-":parseFloat(val).toFixed(ac_config.numdecs); }
-function formatP1(val,row,idx) { return parseFloat(val).toFixed(ac_config.numdecs); }
-function formatV2(val,row,idx) { return (row.P2>=200)?"-":parseFloat(val).toFixed(1); }
-function formatT2(val,row,idx) { return (row.P2>=200)?"-":parseFloat(val).toFixed(ac_config.numdecs); }
-function formatP2(val,row,idx) { return parseFloat(val).toFixed(ac_config.numdecs); }
-function formatTF(val,row,idx) {
-	var t=parseFloat(row.T1)+parseFloat(row.T2);
-	return (row.Penalizacion>=200)?"-":t.toFixed(ac_config.numdecs);
-}
-
 /**
- * Return short name for requested federation. Use to format datagrid cell
- * @param {int} val Federation ID
- * @param {int} row unused
- * @param {int} idx unused
- * @returns {string} requested value or index if not found
+ * indica si la manga es agility o jumping
  */
-function formatFederation(val,row,idx) {
-    if (typeof(val)==='undefined') return "";
-    var v=parseInt(val);
-    if (typeof(ac_fedInfo[v])==="undefined") return val;
-    return ac_fedInfo[v].Name;
+function isAgility(tanda) {
+    switch(Number(tanda)) {
+        case	0	: /* default */ return true;
+			// en pre-agility no hay categorias
+        case    1	:/* Pre-Agility 1'*/ return true;
+        case    2	:/* Pre-Agility 2'*/ return false; // second round
+        case    3	:/* Agility-1 GI Large'*/ return true;
+        case    4	:/* Agility-1 GI Medium */ return true;
+        case    5	:/* Agility-1 GI Small'*/ return true;
+        case    6	:/* Agility-2 GI Large'*/ return true;
+        case    7	:/* Agility-2 GI Medium'*/ return true;
+        case    8	:/* Agility-2 GI Small'*/ return true;
+        case    9	:/* Agility GII Large*/ return true;
+        case    10	:/* Agility GII Medium*/ return true;
+        case    11	:/* Agility GII Small*/ return true;
+        case    12	:/* Agility GIII Large*/ return true;
+        case    13	:/* Agility GIII Medium*/ return true;
+        case  	14	:/* Agility GIII Small*/ return true;
+        case  	15	:/* Agility Large*/ return true;
+        case  	16	:/* Agility Medium'*/ return true;
+        case  	17	:/* Agility Small*/ return true;
+        case  	18	:/* Agility Eq. 3 Large*/ return true;
+        case  	19	:/* Agility Eq. 3 Medium*/ return true;
+        case  	20	:/* Agility Eq. 3 Small*/ return true;
+            // en jornadas por equipos conjunta tres alturas se mezclan categorias M y S
+        case  	21	:/* Ag. Equipos 4 Large'*/ return true;
+        case  	22	:/* Ag. Equipos 4 Med/Small*/ return true;
+        case  	23	:/* Jumping GII Large'*/ return false;
+        case  	24	:/* Jumping GII Medium'*/ return false;
+        case  	25	:/* Jumping GII Small'*/ return false;
+        case  	26	:/* Jumping GIII Large'*/ return false;
+        case  	27	:/* Jumping GIII Medium'*/ return false;
+        case  	28	:/* Jumping GIII Small'*/ return false;
+        case  	29	:/* Jumping Large'*/ return false;
+        case  	30	:/* Jumping Medium*/ return false;
+        case  	31	:/* Jumping Small*/ return false;
+        case  	32  :/* Jumping Eq. 3 Large*/ return false;
+        case  	33	:/* Jumping Eq. 3 Medium*/ return false;
+        case  	34	:/* Jumping Eq. 3 Small*/ return false;
+			// en jornadas por equipos conjunta 3 alturas se mezclan categorias M y S
+        case  	35	:/* Jp. Equipos 4 Large*/ return false;
+        case  	36	:/* Jp. Equipos 4 Med/Small*/ return false;
+			// en las rondas KO, y especiales los perros compiten todos contra todos a una sola manga
+        case  	37	:/* Manga K.O.l*/ return true;
+        case  	38	:/* Manga Especial Largel*/ return true;
+        case  	39  :/* Manga Especial Medium'l*/ return true;
+        case  	40	:/* Manga Especial Smalll*/ return true;
+
+			// "Tiny" support for Pruebas de cuatro alturas
+        case  	41	:/* Agility-1 GI Tiny*/ return true;
+        case  	42	:/* Agility-2 GI Tiny*/ return false; // second round
+        case  	43	:/* Agility GII Tiny*/ return true;
+        case  	44	:/* Agility GIII Tiny*/ return true;
+        case  	45	:/* Agility Tiny*/ return true;
+        case  	46	:/* Agility Eq. 3 Tiny*/ return true;
+			// en equipos4  cuatro alturas  agrupamos por LM y ST
+        case  	47	:/* Ag. Equipos 4 Large/Medium*/ return true;
+        case  	48	:/* Ag. Equipos 4 Small/Tiny*/ return true;
+        case  	49	:/* Jumping GII Tinyy*/ return false;
+        case  	50	:/* Jumping GIII Tiny*/ return false;
+        case  	51	:/* Jumping Tiny*/ return false;
+        case  	52	:/* Jumping Eq. 3 Tiny*/ return false;
+        case  	53	:/* Jp. Equipos 4 Large/Medium*/ return false;
+        case  	54	:/* Jp. Equipos 4 Small/Tiny*/ return false;
+        case  	55	:/* Manga Especial Tiny*/ return true;
+    }
 }
 
-/* stylers para formateo de celdas especificas */
-function formatOk(val,row,idx) { return (parseInt(val)==0)?"":"&#x2714;"; }
-function formatNotOk(val,row,idx) { return (parseInt(val)!=0)?"":"&#x2714;"; }
-function formatCerrada(val,row,idx) { return (parseInt(val)==0)?"":"&#x26D4;"; }
-function formatRing(val,row,idx) { return (val==='-- Sin asignar --')?"":val; }
-function formatCelo(val,row,idx) { return (parseInt(val)==0)?" ":"&#x2665;"; }
-function checkPending(val,row,idx) { return ( parseInt(row.Pendiente)!=0 )? 'color: #f00;': ''; }
-function competicionRowStyler(idx,row) { return (row.Dorsal=='*')? myRowStyler(-1,row) : myRowStyler(idx,row); }
-function formatOrdenSalida(val,row,idx) { return '<span style="font-size:1.5em;font-weight:bold;height:40px;line-height:40px">'+(1+idx)+'</span>'; }
-function formatDorsal(val,row,idx) { return '<span style="font-size:1.5em;font-weight:bold;height:40px;line-height:40px">'+val+'</span>'; }
-
-function formatOrdenLlamadaPista(val,row,idx) { if (val<=0) return ""; return '<span style="font-weight:bold;font-size:1.5em;">'+val+'</span>'; }
-function formatLlamadaGuia(val,row,idx) { if (row.Orden>0) return val; return '<span style="font-weight:bold;font-size:1.4em;">'+val+'</span>'; }
-function formatLogo(val,row,idx) {
-    // TODO: no idea why idx:0 has no logo declared
-    if (typeof(val)==='undefined') return '<img width="40" height="40" alt="empty.png" src="/agility/images/logos/empty.png"/>';
-    return '<img width="40" height="40" alt="'+val+'" src="/agility/images/logos/'+val+'"/>';
-}
-
-/* comodity function to set up round SCT unit based on SCT type */
-function round_setUnit(tipo,dest) {
-    if (tipo==0) $(dest).val('s'); // fixed SCT: set unit to seconds
-    if (tipo==6) $(dest).val('m'); // Velocity instead of time/percent: set unit to mts/sec
-}
-
-function formatTeamResults( value , rows ) {
-    // todo: check eq3 or eq4 contest and eval time and penalization
-    var time=0.0;
-    var penal=0.0;
-    var logos="";
-    var width=($('#vw_header-combinadaFlag').text()==='true')?500:1000;
-    var tmode=(isJornadaEq3()?3:4);
-    function addLogo(logo) {
-        if (logos.indexOf(logo)>=0) return;
-        logos = logos + '&nbsp;<img height="40px" src="/agility/images/logos/'+ logo + '"/>';
-    }
-    for (var n=0;n<tmode;n++) {
-        if ( typeof(rows[n])==='undefined') {
-            penal+=200.0;
-            logos = logos + '&nbsp';
-        } else {
-            penal+=parseFloat(rows[n].Penalizacion);
-            time+=parseFloat(rows[n].Tiempo);
-            addLogo(rows[n].LogoClub);
-        }
-    }
-    // return "Equipo: "+value+" Tiempo: "+time+" Penalizaci&oacute;n: "+penal;
-    return '<div class="vw_equipos3" style="width:'+width+'px;">'+
-        '<span style="width:10%;text-align:left;">'+logos+'</span>'+
-        '<span style="width:25%;text-align:left;">Eq: '+value+'</span>' +
-        '<span style="width:30%;text-align:right;">Tiempo: '+(time).toFixed(ac_config.numdecs)+'</span>' +
-        '<span style="width:30%;text-align:right;">Penaliz.:'+(penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:5%;text-align:right;font-size:1.5em;">'+(workingData.teamCounter++)+'</span>'+
-        '</div>';
-}
-
-function formatTeamResultsConsole( value , rows ) {
-    // todo: check eq3 or eq4 contest and eval time and penalization
-    var time=0.0;
-    var penal=0.0;
-    var tmode=(isJornadaEq3()?3:4);
-    for (var n=0;n<tmode;n++) {
-        if ( typeof(rows[n])==='undefined') {
-            penal+=200.0;
-        } else {
-            penal+=parseFloat(rows[n].Penalizacion);
-            time+=parseFloat(rows[n].Tiempo);
-        }
-    }
-    // return "Equipo: "+value+" Tiempo: "+time+" Penalizaci&oacute;n: "+penal;
-    return '<div class="vw_equipos3" style="width:640px">'+
-        '<span style="width:35%;text-align:left;"><?php _e('Team'); ?>: '+value+'</span>' +
-        '<span style="width:25%;text-align:right;"><?php _e('Time'); ?>: '+(time).toFixed(ac_config.numdecs)+'</span>' +
-        '<span style="width:25%;text-align:right;"><?php _e('Penal'); ?>.:'+(penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:15%;text-align:right;font-size:1.5em">'+(workingData.teamCounter++)+'</span>'+
-        '</div>';
-}
-
-function formatTeamClasificaciones(value,rows) {
-    var logos="";
-    var tmode=(isJornadaEq3()?3:4);
-    function sortResults(a,b) {
-        return (a.penal== b.penal)? (a.time - b.time) : (a.penal - b.penal);
-    }
-    function addLogo(logo) {
-        if (logos.indexOf(logo)>=0) return;
-        logos = logos + '&nbsp;<img height="40px" src="/agility/images/logos/'+ logo + '"/>';
-    }
-    // cogemos y ordenamos los datos de cada manga
-    var manga1={ time:0.0, penal:0.0, perros:[] };
-    var manga2={ time:0.0, penal:0.0, perros:[] };
-    for (var n=0;n<4;n++) {
-        if (typeof(rows[n]) === 'undefined') {
-            manga1.perros[n] = {time: parseFloat(0.0), penal: parseFloat(200.0)};
-            manga2.perros[n] = {time: parseFloat(0.0), penal: parseFloat(200.0)};
-            logos = logos + '&nbsp';
-        } else {
-            manga1.perros[n] = {time: parseFloat(rows[n].T1), penal: parseFloat(rows[n].P1)};
-            manga2.perros[n] = {time: parseFloat(rows[n].T2), penal: parseFloat(rows[n].P2)};
-            addLogo(rows[n].LogoClub);
-        }
-    }
-    // ordenamos ahora las matrices de resultados
-    (manga1.perros).sort(sortResults);
-    (manga2.perros).sort(sortResults);
-    // y sumamos los tres/cuatro primeros ( 3Mejores/Conjunta ) resultados
-    for (var n=0;n<tmode;n++) {
-        manga1.time +=parseFloat(manga1.perros[n].time);
-        manga1.penal +=parseFloat(manga1.perros[n].penal);
-        manga2.time +=parseFloat(manga2.perros[n].time);
-        manga2.penal +=parseFloat(manga2.perros[n].penal);
-    }
-    // el resultado final es la suma de las mangas
-    var time=manga1.time+manga2.time;
-    var penal=manga1.penal+manga2.penal;
-    // !Por fin! componemos una tabla html como respuesta
-    return '<div class="pb_equipos3">'+
-        '<span style="width:10%;text-align:left;">'+logos+'</span>'+
-        '<span style="width:20%;text-align:left;"> Eq: '+value+'</span>' +
-        '<span > T1: '+(manga1.time).toFixed(ac_config.numdecs)+' - P1: '+(manga1.penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span > T2: '+(manga2.time).toFixed(ac_config.numdecs)+' - P2: '+(manga2.penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:25%;"> <?php _e('Time');?>: '+(time).toFixed(ac_config.numdecs)+' - <?php _e('Penal');?>: '+(penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:5%;text-align:right;font-size:1.5em">'+(workingData.teamCounter++)+'</span>'+
-        '</div>';
-}
-
-function formatTeamClasificacionesConsole(value,rows) {
-    var tmode=(isJornadaEq3()?3:4);
-    function sortResults(a,b) {
-        return (a.penal== b.penal)? (a.time - b.time) : (a.penal - b.penal);
-    }
-    // cogemos y ordenamos los datos de cada manga
-    var manga1={ time:0.0, penal:0.0, perros:[] };
-    var manga2={ time:0.0, penal:0.0, perros:[] };
-    for (var n=0;n<4;n++) {
-        if (typeof(rows[n]) === 'undefined') {
-            manga1.perros[n] = {time: parseFloat(0.0), penal: parseFloat(200.0)};
-            manga2.perros[n] = {time: parseFloat(0.0), penal: parseFloat(200.0)};
-        } else {
-            manga1.perros[n] = {time: parseFloat(rows[n].T1), penal: parseFloat(rows[n].P1)};
-            manga2.perros[n] = {time: parseFloat(rows[n].T2), penal: parseFloat(rows[n].P2)};
-        }
-    }
-    // ordenamos ahora las matrices de resultados
-    (manga1.perros).sort(sortResults);
-    (manga2.perros).sort(sortResults);
-    // y sumamos los tres/cuatro primeros ( 3Mejores/Conjunta ) resultados
-    for (n=0;n<tmode;n++) {
-        manga1.time +=parseFloat(manga1.perros[n].time);
-        manga1.penal +=parseFloat(manga1.perros[n].penal);
-        manga2.time +=parseFloat(manga2.perros[n].time);
-        manga2.penal +=parseFloat(manga2.perros[n].penal);
-    }
-    // el resultado final es la suma de las mangas
-    var time=manga1.time+manga2.time;
-    var penal=manga1.penal+manga2.penal;
-
-    // !Por fin! componemos una tabla html como respuesta
-    return '<div class="pb_equipos3" style="width:800px">'+
-        '<span style="width:30%;text-align:left;"> Eq: '+value+'</span>' +
-        '<span > T1: '+(manga1.time).toFixed(ac_config.numdecs)+' - P1: '+(manga1.penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span > T2: '+(manga2.time).toFixed(ac_config.numdecs)+' - P2: '+(manga2.penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:20%;"> <?php _e('Time'); ?>: '+(time).toFixed(ac_config.numdecs)+' - <?php _e('Penal');?>: '+(penal).toFixed(ac_config.numdecs)+'</span>'+
-        '<span style="width:10%;text-align:right;">'+(workingData.teamCounter++)+'</span>'+
-        '</div>';
+function isJumping(tanda) {
+    return !isAgility(tanda);
 }
 
 /**
@@ -259,6 +122,7 @@ function getMangaMode(fed,recorrido,categoria) {
     }
     switch(categoria) {
         case '-':
+        case 'LMST':
         case '-LMST':return ac_fedInfo[f].Modes[2][0]; // common for all categories; just use first mode (standard )
         case 'L':return ac_fedInfo[f].Modes[rec][0];
         case 'M':return ac_fedInfo[f].Modes[rec][1];
@@ -566,9 +430,9 @@ function resetCompeticion() {
         return;
     }
     var msg='<?php _e('Youll lost <strong>EVERY</strong> inserted results'); ?>'+'<br />'+
-        '<?php _e('in every categories on this round'); ?>'+'<br />'+
+        '<?php _e('in every categories on this round'); ?>'+'<br /><br />'+
         '<?php _e('Do you really want to continue?'); ?>';
-    $.messager.confirm('<?php _e("Erase results");?>', msg, function(r){
+    var w=$.messager.confirm('<?php _e("Erase results");?>', msg, function(r){
         if (!r) return;
         $.ajax({
             type:'GET',
@@ -584,8 +448,39 @@ function resetCompeticion() {
             reloadCompeticion();
         });
     });
+    w.window('resize',{width:400}).window('center');
 }
 
+function swapMangas() {
+    if (workingData.jornada==0) return;
+    if (workingData.manga==0) return;
+    // si hay alguna celda en edicion, ignorar
+    if ($('#competicion-datagrid').datagrid('options').editIndex!=-1) {
+        $.messager.alert('<?php _e("Busy"); ?>','<?php _e("Cannot swap: a cell is being edited"); ?>',"error");
+        return;
+    }
+    var msg='<?php _e('This action will exchange <strong>EVERY</strong> inserted results'); ?> '+
+        '<?php _e('in all categories with the Agility/Jumping counterpart of this round'); ?>'+'<br /><br />'+
+        '<?php _e('Do you really want to continue?'); ?>';
+    var w=$.messager.confirm('<?php _e("Swaps results");?>', msg, function(r){
+        if (!r) return;
+        $.ajax({
+            type:'GET',
+            url:"/agility/server/database/mangaFunctions.php",
+            dataType:'json',
+            data: {
+                Prueba: workingData.prueba,
+                Jornada: workingData.jornada,
+                Manga: workingData.manga,
+                Operation: 'swap'
+            }
+        }).done( function(msg) {
+            $('#competicion-dialog').dialog('close');
+            $('#competicion-listamangas').datagrid('reload');
+        });
+    });
+    w.window('resize',{width:450}).window('center');
+}
 var autoUpdateID=null;
 
 function autoUpdateCompeticion() {
@@ -706,6 +601,84 @@ function competicionKeyEventHandler(evt) {
 		}
 	}
 	return true; // to allow follow key binding chain
+}
+/**
+ * Evaluate puesto for given perro in final scores
+ * Notice that the dog data for current round is not yet stored
+ * @param {object} datos (idPerro, penalization on current round)
+ * @param {function} callback(resultado,puesto)
+ * @returns {boolean}
+ */
+function getPuestoFinal(datos,callback) {
+    var mode=getMangaMode(workingData.datosPrueba.RSCE,workingData.datosManga.Recorrido,datos.Categoria);
+    if (mode==-1) {
+        $.messager.alert('<?php _e('Error'); ?>','<?php _e('Internal error: invalid Federation/Course/Category combination'); ?>','error');
+        return false;
+    }
+    var param= {
+        Operation:	'getPuesto',
+        Prueba:		workingData.prueba,
+        Jornada:	workingData.jornada,
+        Manga:		workingData.manga,
+        Mode:       mode
+    };
+    // console.log("perro:"+idperro+" categoria:"+datos.Categoria+" mode:"+mode);
+    $.ajax({
+        type:'GET',
+        url:"/agility/server/database/clasificacionesFunctions.php",
+        dataType:'json',
+        data: $.extend({},param,datos),
+        success: function(result) {
+            if (result.errorMsg) {
+                $.messager.alert('<?php _e('Error'); ?>',result.errorMsg,'error');
+                return false;
+            }
+            if (result.success==true) {
+                callback(datos,result);
+                return false;
+            }
+        }
+    });
+    return false;
+}
+
+/**
+ * Evaluate puesto for given perro in current round
+ * @param {object} datos Perro,Faltas,Tocados,Rehuses,Eliminado,NoPresentado,Tiempo
+ * @param {function} callback(resultado,puesto)
+ * @returns {boolean}
+ */
+function getPuestoParcial(datos,callback) {
+    var mode=getMangaMode(workingData.datosPrueba.RSCE,workingData.datosManga.Recorrido,datos.Categoria);
+    if (mode==-1) {
+        $.messager.alert('<?php _e('Error'); ?>','<?php _e('Internal error: invalid Federation/Course/Category combination'); ?>','error');
+        return false;
+    }
+    var param= {
+        Operation:	'getPuesto',
+        Prueba:		workingData.prueba,
+        Jornada:	workingData.jornada,
+        Manga:		workingData.manga,
+        Mode:       mode
+    };
+    // console.log("perro:"+idperro+" categoria:"+datos.Categoria+" mode:"+mode);
+    $.ajax({
+        type:'GET',
+        url:"/agility/server/database/resultadosFunctions.php",
+        dataType:'json',
+        data: $.extend({},param,datos),
+        success: function(result) {
+            if (result.errorMsg) {
+                $.messager.alert('<?php _e('Error'); ?>',result.errorMsg,'error');
+                return false;
+            }
+            if (result.success==true) {
+                callback(datos,result);
+                return false;
+            }
+        }
+    });
+    return false;
 }
 
 /** 
@@ -928,7 +901,7 @@ function competicionDialog(name) {
     }
     title = workingData.nombrePrueba + ' -- ' + workingData.nombreJornada + ' -- ' + workingData.nombreManga;
     if (name==='ordensalida') {
-        var display= (isJornadaEq3() || isJornadaEq4())?"inline-block":"none";
+        var display= (isJornadaEqMejores() || isJornadaEqConjunta())?"inline-block":"none";
         $('#ordensalida-dialog').dialog('open').dialog('setTitle',' <?php _e("Starting order"); ?>'+": "+title);
         $('#ordensalida-eqBtn').css('display',display);
         // cargamos ventana de orden de salida
@@ -1088,7 +1061,8 @@ function resultados_doSelectRonda(row) {
 		type:'GET',
 		url:"/agility/server/database/clasificacionesFunctions.php",
 		dataType:'json',
-		data: {	
+		data: {
+            Operation: (isJornadaEquipos())?'clasificacionEquipos':'clasificacionIndividual',
 			Prueba:workingData.prueba,
             Jornada:workingData.jornada,
             Federation:fed,
@@ -1098,9 +1072,17 @@ function resultados_doSelectRonda(row) {
 			Mode: mode
 		},
 		success: function(dat) {
-			$('#resultados_thead_m1').text(row.NombreManga1);
-			$('#resultados_thead_m2').text(row.NombreManga2);
-			$('#resultados-datagrid').datagrid('loadData',dat);
+            if ( isJornadaEquipos() ) {
+                $('#finales_equipos_roundname_m1').text(row.Manga1.Nombre);
+                $('#finales_equipos_roundname_m2').text(row.Manga2.Nombre);
+                workingData.individual=dat.individual;
+                $('#finales_equipos-datagrid').datagrid('loadData',dat.equipos);
+            } else {
+                $('#finales_individual_roundname_m1').text(row.Manga1.Nombre);
+                $('#finales_individual_roundname_m2').text(row.Manga2.Nombre);
+                workingData.individual=dat.rows;
+                $('#finales_individual-datagrid').datagrid('loadData',dat.rows);
+            }
 		}
 	});
 }
@@ -1186,7 +1168,6 @@ function reloadClasificaciones() {
     	$.messager.alert('<?php _e("Error"); ?>','<?php _e("There is no selected round for this journey"); ?>',"warning");
     	return; // no way to know which ronda is selected
 	}
-    workingData.teamCounter=1; // reset team's puesto counter
 	// obtenemos el modo activo
 	var mode=$('#resultados-selectCategoria').combobox('getValue');
 	// calculamos y recargamos tabla de clasificaciones
@@ -1194,7 +1175,8 @@ function reloadClasificaciones() {
 		type:'GET',
 		url:"/agility/server/database/clasificacionesFunctions.php",
 		dataType:'json',
-		data: {	
+		data: {
+            Operation: (isJornadaEquipos())?'clasificacionEquipos':'clasificacionIndividual',
 			Prueba:workingData.prueba,
 			Jornada:workingData.jornada,
 			Manga1:ronda.Manga1,
@@ -1203,9 +1185,17 @@ function reloadClasificaciones() {
 			Mode: mode
 		},
 		success: function(dat) {
-			$('#resultados_thead_m1').text(ronda.NombreManga1);
-			$('#resultados_thead_m2').text(ronda.NombreManga2);
-			$('#resultados-datagrid').datagrid('loadData',dat);
+            if ( isJornadaEquipos() ) {
+                $('#finales_equipos_roundname_m1').text(ronda.NombreManga1);
+                $('#finales_equipos_roundname_m2').text(ronda.NombreManga2);
+                workingData.individual=dat.individual;
+                $('#finales_equipos-datagrid').datagrid('loadData',dat.equipos);
+            } else {
+                $('#finales_individual_roundname_m1').text(ronda.NombreManga1);
+                $('#finales_individual_roundname_m2').text(ronda.NombreManga2);
+                workingData.individual=dat.rows;
+                $('#finales_individual-datagrid').datagrid('loadData',dat.rows);
+            }
 		}
 	});
 }

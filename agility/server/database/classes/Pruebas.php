@@ -2,7 +2,7 @@
 /*
 Pruebas.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -216,7 +216,7 @@ class Pruebas extends DBObject {
 							Pruebas.Observaciones AS Observaciones, $limit as UserLimit",
 				/* FROM */ "Pruebas,Clubes",
 				/* WHERE */ $where,
-				/* ORDER BY */ "Nombre ASC",
+				/* ORDER BY */ "ID DESC",
 				/* LIMIT */ ""
 		);
         // parse result and add inscriptions count

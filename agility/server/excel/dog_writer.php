@@ -2,7 +2,7 @@
 /*
 excel_listaPerros.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -38,6 +38,7 @@ class excel_ListaPerros extends XLSX_Writer {
 	 */
 	function __construct() {
 		parent::__construct("doglist.xlsx");
+		setcookie('fileDownload','true',time()+30,"/"); // tell browser to hide "downloading" message box
         $d=new Dogs("excel_listaPerros");
         $res=$d->select();
         if (!is_array($res)){

@@ -1,7 +1,7 @@
 /*
 common.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -53,6 +53,35 @@ function myAlert(msg) {
 }
 
 /**
+ * Replacement for toFixed, but trunk instead of round
+ * @param {int} value Value to be parsed,
+ * @param {int} numdecs Number of decimal numbers to be shown
+ * no, cannot use sprintf library, as internally uses toFixed() rounding
+ */
+function toFixedT(value,numdecs) {
+	// first approach. may fail with some numbers due to internal handling of floating point
+	// numbers in javascript: ie: toFixedT(4.27 , 2 ) return 4.26 due to js internal handling
+	/*
+	return Number ( value - 5/Math.pow(10,numdecs+1)).toFixed(numdecs);
+	*/
+
+	// this code works fine, but doesn't always returns desired decimal numbers
+	// that is : toFixedT( 2.1 , 2) returns '2.1' instead of '2.10'
+	switch (parseInt(numdecs)) {
+		case 0: return parseInt(value);
+		case 1: return Number(value.toString().match(/^\d+(?:\.\d{0,1})?/))
+		case 2: return Number(value.toString().match(/^\d+(?:\.\d{0,2})?/))
+		case 3: return Number(value.toString().match(/^\d+(?:\.\d{0,3})?/))
+		case 4: return Number(value.toString().match(/^\d+(?:\.\d{0,4})?/))
+		default: return toFixed(value,numdecs);
+	}
+}
+
+function toPercent(val,percent) {
+	return Math.round( parseFloat(val)*parseFloat(percent)/100.0);
+}
+
+/**
  * Set text of 'header' field on main window
  * @param {string} msg text to be shown
  */
@@ -60,8 +89,8 @@ function setHeader(msg) { $('#Header_Operation').html('<p>'+msg+'</p>'); }
 
 // permisos de ejecucion
 const access_perms = {
-    ENABLE_TEAM3    :1,  // permite gestionar pruebas de equipos 3
-    ENABLE_TEAM4    :2,  // permite gestionar pruebas de equipos 4
+    ENABLE_IMPORT   :1,  // permite importar datos desde Excel
+    ENABLE_TEAMS    :2,  // permite gestionar pruebas de equipos
     ENABLE_KO       :4,  // permite gestionar pruebas K.O
     ENABLE_SPECIAL  :8,  // permite gestionar pruebas de mangas multiples
     ENABLE_VIDEOWALL:16, // permite acceso desde videomarcador
@@ -123,9 +152,27 @@ function isTeamByJornada(jornada) {
     return false;
 }
 
-function isJornadaOpen() { return (workingData.datosJornada.Open==1); }
-function isJornadaEq3() { return (workingData.datosJornada.Equipos3==1); }
-function isJornadaEq4() { return (workingData.datosJornada.Equipos4==1); }
+function isJornadaOpen() { return (workingData.datosJornada.Open!=0); }
+function isJornadaEqMejores() { return (workingData.datosJornada.Equipos3!=0); }
+function isJornadaEqConjunta() { return (workingData.datosJornada.Equipos4!=0); }
+function isJornadaEquipos() { return ( isJornadaEqMejores() || isJornadaEqConjunta() ); }
+function getMinDogsByTeam() {
+	var mindogs=4;
+	switch(parseInt(workingData.datosJornada.Equipos3)) {
+		case 1:	return 3; // old style 3 best of 4
+		case 2:	return 2; // 2 best of 3
+		case 3: return 3; // 3 best of 4
+		default: break;
+	}
+	switch(parseInt(workingData.datosJornada.Equipos4)) {
+		case 1:	return 4; // old style 4 combined
+		case 2:	return 2; // 2 combined
+		case 3: return 3; // 3 combined
+		case 4: return 4; // 4 combined
+		default: break;
+	}
+	return mindogs;
+}
 
 function fedName(fed) {
 	return ac_fedInfo[fed].Name;
@@ -146,10 +193,15 @@ function isInternational(fed){
 // lista de dialogos a limpiar cada vez que se recarga la pantalla
 var slaveDialogs = {};
 
-//musiquita para el tablet
-// usamos closures para garantizar que se crea y libera correctamente
+/*
+Replace Audio object with new implementation based on WebAudio API
+in this way we solve some leaks related to DocumentFragment handling
+Anyway, provide additional fallback when web audio api is not supported
+ */
+
+// Use <audio> tag based sound when WEB Audio api is not supported
 var Sound = (function () {
-	var sndData = "data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=";  
+	var sndData = "data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=";
 	//var sndData = "data:audio/mpeg;base64,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lTv61W/qd/Wje3//7V667X6bozPZZDnOhhQiAVJERZJqUksWSyUSjcSaLRCJRt5Fc1gbinbuC9AcQFaQHTvIcBEgzuPGUi4snRYxCUcwfQsgrsOwgYWhgXI8OSxTLpXIGWzQQmJkZ4MTqWk51ZvJ8yEWLBPHByjpk06oghcPIMTANpiAEol42SstNCaE4emlhHZECKmpiai511tQRNFGi3ZNNaKZ4uqMWJ9mVTUvRV1p09PoIyfQ8nzn//0GoITSvsmjWX1IssxN6NZj////6f/////////////9X/X/9////v//vdORm9drUyX+pkap5QtP///3BAP/8uMVADAASEAAAAA0MqAw8zahXau1wS3Iikw6ZLeyGDnazhqd9I2K//uSZBIB1JtnTPduYAAtDNiR4AgAUbGdM81JtQDAtiIIEBdJBPOiTInkDB8C4SCl1SSd3qUqYkyMqCLIgiXTVJVWvpsTJBQGMFk1ZG39NEmRSINiDxijt7uuieDcjKHjW3/okyGejaLp5A1T/1okyHojfOpt9aS9NZdElNr//ZE1D3EkaLf1ayGilKkP+9FEXZgxDgf//+1/03ulNP///t1v//6+l/9////+z9f//p7t1tcxXY5GRUZpUD1EnqrB4qYhDOpgEC3m9ehVWxAMYWmANovkdaZlb714FobdPhDMr5MS1pRgGSmsPY5N0NroJlADfA6ZkKKkzZ3egzrJoALy4ki/6+gsWgCUnzferXrTWoFCBwOGrdBvXWsEqGczRUer6GnRUBgEKtJTa3dfWoE6ZkF/vapZwFfSmyuyDVqasfAcqCF6f/UIUWjcQDB//+fz//36gy//f++nTt9ZJ/59O3/b////Tb3u/oRaXYrCVUUaZSxYx1W4iFh9sxlwAFlxBiptIAtAXgPxQA00yJ80pueZAhYLJXfh9tlhGIK0lv/7kmQSAASpZ1D9aaAALa1IkaAIAFJBoR4ZuIAAyzQhgwIgAKy04cAcsFrHsYFxY7wHMJ0XDRi+bqMDRSCFacuApo8Qu4y0iQJRAzJdFbqQQWJOEQxcQprUggpBBZmmYBMAWayXTZBlu9OyCBmFeGpTMt3Uptq3OFAdTNal7/ZBliZFiCmv/6A7d//6ZO//84b//+dPEB/////v2//////276femv9+yvX2t37////t/9mruqtudVOSHkElFmQ4tnOMIN0mzTgFNJq/+ZOeGFkkO//hx8YIB0uH+BQgjKKsUEJ1D5kkk+HEjXDlQHplt8RkGMhCEfI8q1/kWQGWG6fGZ//E3FgZITabjMmnRXS/lUZogKBRFqLAlIUKqr//lYWSRxwc4fyLENHwaDnLV///kPLZBSYJwXETRAhaRlCgVjMgwyqK2SV9Tor//8ihVLZO//hT8//3/b/Z//un/vp//pQzP//0MfKUy///qhWUzqRP///mRTKwUwlzARpf////zHEiP/6lTEFNRTMuOTkuNVVVVVVVVVVVVVVVVVVVVVX/+5JkDQ/wAABpBwAACAAADSDgAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV";
 	var df = document.createDocumentFragment();
 	return function Sound() {
@@ -160,10 +212,26 @@ var Sound = (function () {
 		return snd;
 	}
 }());
-// then do it
-// var snd = Sound("data:audio/wav;base64," + base64string);
 
-function beep() { Sound(); }
+// trick to use proper name
+var ac_AudioContext=null;
+if (typeof AudioContext !== "undefined") {
+	ac_AudioContext = new AudioContext();
+} else if (typeof webkitAudioContext !== "undefined") {
+	ac_AudioContext = new webkitAudioContext();
+} else {
+	console.log('Web Audio API not supported. Using <audio> tags');
+}
+
+function beep() {
+	if (ac_AudioContext==null) return Sound(); // WebAudio API not supported
+	var oscillator = ac_AudioContext.createOscillator();
+	oscillator.type = 'square';
+	oscillator.frequency.value = 440;
+	oscillator.connect(ac_AudioContext.destination);
+	oscillator.start(0);
+	setTimeout(function(){ oscillator.stop()},50);
+}
 
 var ac_config={};
 function loadConfiguration(callback) {
@@ -264,6 +332,33 @@ function loadContents(page,title,slaves) {
 }
 
 /**
+ * Load (if required pages and scripts associated with data importing from excel
+ */
+function loadImportPages() {
+	var import_flag=$('#importflag');
+	if (import_flag.html() != "") return false; // already loaded
+
+	// load javascript files for import operations
+	var fileref=document.createElement('script');
+	if (typeof(fileref)!=="undefined") {
+		fileref.setAttribute("type","text/javascript");
+		fileref.setAttribute("src", "/agility/console/import/import.js.php");
+		document.getElementsByTagName("head")[0].appendChild(fileref); // append at the end of head
+	}
+
+	// load html pages
+	$('#importclubes').panel('refresh', '/agility/console/import/import_clubes.inc.php');
+	/*
+	$('#importhandlers').panel('refresh', '/agility/console/import/import_handlers.inc.php');
+	$('#importdogs').panel('refresh', '/agility/console/import/import_dogs.inc.php');
+	$('#importinscriptions').panel('refresh', '/agility/console/import/import_inscriptions.inc.php');
+	$('#importcontest').panel('refresh', '/agility/console/import/import_contest.inc.php');
+	*/
+	import_flag.html("ready"); // mark as ready
+	return true;
+}
+
+/**
  * Poor's man javascript implementation of php's replaceAll()
  */
 function replaceAll(find,replace,from) {
@@ -340,6 +435,11 @@ function Countdown(options) {
 	this.val = function(secs) {
 		if (typeof(secs) !== 'undefined') count=secs*10;
 		return count;
+	};
+
+	// get running status
+	this.started = function() {
+		return (count>0)?true:false;
 	}
 }
 
@@ -479,6 +579,13 @@ function setFederation(f) {
 		if (ac_fedInfo[i].ID==0) fed=ac_fedInfo[i]; // mark default and continue search
 		if (ac_fedInfo[i].ID==f) { fed=ac_fedInfo[i]; break; } // found
 	}
+	// in videowall setFederation (invoked from initWorkingData() has no sense.
+	// so result can become null. detect and ignore
+	if (fed==null) {
+		workingData.federation= 0;
+		workingData.datosFederation=null;
+		return;
+	}
 	workingData.federation= fed.ID;
 	workingData.datosFederation=fed;
 	// set background logo and menu entries according intl condition
@@ -497,7 +604,7 @@ function setFederation(f) {
  * @param {object} data prueba data
  */
 function setPrueba(data) {
-	workingData.prueba=Number(data.ID);
+	workingData.prueba=parseInt(data.ID);
 	workingData.nombrePrueba=data.Nombre;
 	workingData.datosPrueba=data;
 	setFederation(data.RSCE);
@@ -514,7 +621,7 @@ function setJornada(data) {
 	workingData.nombreJornada="";
 	workingData.datosJornada={};
 	if (typeof(data) === 'undefined') return;
-	workingData.jornada=Number(data.ID);
+	workingData.jornada=parseInt(data.ID);
 	workingData.nombreJornada=data.Nombre;
 	workingData.datosJornada=data;
 }
@@ -524,7 +631,7 @@ function setManga(data) {
 	workingData.nombreManga = "";
 	workingData.datosManga = {};
     if (typeof(data) === 'undefined') return;
-    workingData.manga = data.ID;
+    workingData.manga = parseInt(data.Manga); // do not use data.ID as contains extra info
     workingData.nombreManga = data.Nombre;
     workingData.datosManga = data
 }
@@ -534,7 +641,7 @@ function setTanda(data) {
 	workingData.nombreTanda = "";
 	workingData.datosTanda = {};
 	if (typeof(data) === 'undefined') return;
-	workingData.tanda = data.ID;
+	workingData.tanda = parseInt(data.ID);
 	workingData.nombreTanda = data.Nombre;
 	workingData.datosTanda =data;
 }
@@ -542,9 +649,10 @@ function setTanda(data) {
 var workingData = {};
 /**
  * @param {int} id SessionID
+ * @param {function} callback method to handle events
  * Initialize working data information object
  */
-function initWorkingData(id) {
+function initWorkingData(id,callback) {
 	workingData.logoChanged=false;
 	workingData.perro= 0; // IDPerro del perro en edicion
 	workingData.guia= 0; // ID del guia en edicion
@@ -568,7 +676,8 @@ function initWorkingData(id) {
 	if (typeof(workingData.datosManga)==="undefined") workingData.datosManga= {}; // last selected jornada data
 	if (typeof(workingData.datosTanda)==="undefined") workingData.datosTanda= {}; // last selected jornada data
     if (typeof(workingData.datosRonda)==="undefined") workingData.datosRonda= {}; // last selected ronda (grade, manga1, manga2)
-    if (typeof(workingData.teamsByJornada)==="undefined") workingData.teamsByJornada= {}; // last selected ronda (grade, manga1, manga2)
+	if (typeof(workingData.teamsByJornada)==="undefined") workingData.teamsByJornada= {}; // last selected ronda (grade, manga1, manga2)
+	if (typeof(workingData.datosSesion)==="undefined") workingData.datosSesion= {}; // running ring session
 	if (typeof(id)!=="undefined") {
 		$.ajax({
 			url: '/agility/server/database/sessionFunctions.php',
@@ -591,6 +700,8 @@ function initWorkingData(id) {
 				workingData.sesion	= data.ID;
 				workingData.nombreSesion	= data.Nombre;
 				workingData.datosSesion = data;
+				// if provided store event manager for this session
+				if (typeof(callback)!=="undefined") workingData.datosSesion.callback=callback;
 			},
 			error: function(msg){ alert("error setting workingData: "+msg);}
 		});

@@ -1,7 +1,7 @@
 <!-- 
 frm_clubes.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -109,10 +109,11 @@ $config =Config::getInstance();
 				{ field:'Federations',	width:0, hidden:true},
 				{ field:'F1',			width:fnames[0].Width, align:'center', title:fnames[0].Title, hidden:fnames[0].Hidden, formatter:clubes_Fed1 },
 				{ field:'F2',			width:fnames[1].Width, align:'center', title:fnames[1].Title, hidden:fnames[1].Hidden, formatter:clubes_Fed2 },
-				{ field:'F2',			width:fnames[2].Width, align:'center', title:fnames[2].Title, hidden:fnames[2].Hidden, formatter:clubes_Fed3 },
+				{ field:'F3',			width:fnames[2].Width, align:'center', title:fnames[2].Title, hidden:fnames[2].Hidden, formatter:clubes_Fed3 },
 				{ field:'F4',			width:fnames[3].Width, align:'center', title:fnames[3].Title, hidden:fnames[3].Hidden, formatter:clubes_Fed4 },
 				{ field:'F5',			width:fnames[4].Width, align:'center', title:fnames[4].Title, hidden:fnames[4].Hidden, formatter:clubes_Fed5 },
-				// { field:'Logo',		width:2, sortable:true,    title: 'Logo club' },
+				// { field:'Logo',		width:2, sortable:true,    title: 'Logo club' }, // to be removed in a rewrite
+				// { field:'LogoClub',		width:2, sortable:true,    title: 'Logo club' },
 				//{ field:'Observaciones',width:2, sortable:true,    title: 'Observaciones' },
 				{ field:'Baja',			width:2, sortable:true,    align: 'center', title: '<?php _e('Out'); ?>', formatter:clubesBaja }
 			]],
@@ -255,10 +256,10 @@ $config =Config::getInstance();
             	    { field:'ID',		width:15, sortable:true,	title: 'ID' },
             		{ field:'Nombre',	width:30, sortable:true,	title: '<?php _e('Name'); ?>',formatter:formatBold },
 					{ field:'NombreLargo',hidden:true},
-					{ field:'Genero',	hidden:true},
-            		{ field:'Categoria',width:15, sortable:false,	title: '<?php _e('Cat.'); ?>' },
-            		{ field:'Grado',	width:25, sortable:false,   title: '<?php _e('Grade'); ?>' },
+            		{ field:'Categoria',width:15, sortable:false,	title: '<?php _e('Cat.'); ?>' ,formatter:formatCategoria},
+            		{ field:'Grado',	width:15, sortable:false,   title: '<?php _e('Grade'); ?>', formatter:formatGrado },
             		{ field:'Raza',		width:25, sortable:false,   title: '<?php _e('Breed'); ?>' },
+					{ field:'Genero',	width:10, sortable:false,   title: '<?php _e('Gender'); ?>' },
             		{ field:'LOE_RRC',	width:25, sortable:true,    title: '<?php _e('KC id'); ?>' },
             		{ field:'Licencia',	width:25, sortable:true,    title: '<?php _e('License'); ?>' }
             	]],

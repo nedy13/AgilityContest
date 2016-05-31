@@ -1,7 +1,7 @@
 <!-- 
 dlg_competicion.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -38,6 +38,10 @@ $config =Config::getInstance();
    	</span>
    	<span style="float:right;padding:5px">
    		<!-- estos elementos deben estar alineados a la derecha -->
+
+	   	<a id="competicion-swapBtn" href="#" class="easyui-linkbutton"
+		   data-options="iconCls:'icon-updown'" onclick="swapMangas()"><?php _e('Swap'); ?></a>
+
 	   	<a id="competicion-resetBtn" href="#" class="easyui-linkbutton"
 		   data-options="iconCls:'icon-brush'" onclick="resetCompeticion()"><?php _e('Reset'); ?></a>
    		<a id="competicion-printBtn" href="#" class="easyui-linkbutton"
@@ -105,7 +109,7 @@ $('#competicion-datagrid').datagrid({
         { field:'Nombre',		width:20, align:'left',  title: '<?php _e('Name'); ?>',formatter:formatBold},
         { field:'NombreGuia',	width:40, align:'right', title: '<?php _e('Handler'); ?>' },
         { field:'NombreClub',	width:30, align:'right', title: '<?php _e('Club'); ?>' },
-      	{ field:'Categoria',	width:10, align:'center',title: '<?php _e('Cat'); ?>.' },
+      	{ field:'Categoria',	width:10, align:'center',title: '<?php _e('Cat'); ?>.',formatter:formatCategoria },
       	{ field:'Faltas',		width:7, align:'right', title: '<?php _e('Flt'); ?>.',	editor:'numberbox' },
       	{ field:'Rehuses',		width:7, align:'right', title: '<?php _e('Ref'); ?>.',	editor:'numberbox' },
       	{ field:'Tocados',		width:7, align:'right', title: '<?php _e('Tch.'); ?>.',	editor:'numberbox' },
@@ -113,7 +117,7 @@ $('#competicion-datagrid').datagrid({
           	editor:{
           		type:'numberbox',
           		options:{		
-              		formatter:function(v){	return parseFloat(v).toFixed(ac_config.numdecs); },
+              		formatter:function(v){	return toFixedT( parseFloat(v),ac_config.numdecs); },
         			parser:function(s){	var v = parseFloat(s);	return isNaN(v)?'':v; }
             	}
           	}
@@ -220,6 +224,7 @@ function cancelrow(target){
 }
 //- botones del panel de entrada de datos
 addTooltip($('#competicion-reloadBtn').linkbutton(),'<?php _e("Reload competition data on this round"); ?>');
+addTooltip($('#competicion-swapBtn').linkbutton(),'<?php _e("Swap data and results from Agility/Jumping matching round"); ?>');
 addTooltip($('#competicion-resetBtn').linkbutton(),'<?php _e("Delete every competitors data on this round"); ?>');
 addTooltip($('#competicion-printBtn').linkbutton(),'<?php _e("Print judge assistant forms"); ?>');
 addTooltip($('#competicion-autoUpdateBtn'),'<?php _e("(de)activate periodic refresh of results for this round"); ?>');

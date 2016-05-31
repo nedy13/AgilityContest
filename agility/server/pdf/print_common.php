@@ -2,7 +2,7 @@
 /*
 print_common.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -49,9 +49,55 @@ class PrintCommon extends FPDF {
     protected $authManager;
 	protected $regInfo; // registration info from current license
 	protected $timeResolution; // number of decimal numbers to show in time results
+	protected $angle; // current text rotation angle ( for FPDF::Rotate() function )
 
 	protected $centro;
-	
+	protected $useUTF8=false;
+	protected $myFontName="Helvetica";
+
+	/* from http://www.fpdf.org/en/script/script2.php */
+	function Rotate($angle,$x=-1,$y=-1)	{
+		if($x==-1)	$x=$this->x;
+		if($y==-1)	$y=$this->y;
+		if($this->angle!=0)	$this->_out('Q');
+		$this->angle=$angle;
+		if($angle!=0) {
+			$angle*=M_PI/180;
+			$c=cos($angle);
+			$s=sin($angle);
+			$cx=$x*$this->k;
+			$cy=($this->h-$y)*$this->k;
+			$this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm',$c,$s,-$s,$c,$cx,$cy,-$cx,-$cy));
+		}
+	}
+
+	function AddPage($orientation='', $size='', $rotation=0) {
+		parent::AddPage($orientation,$size,$rotation);
+	}
+
+	function _endpage()	{
+		if ( ($this->regInfo==null) || ($this->regInfo['Serial']==="00000000") ) {
+			$img=getIconPath(0,'unregistered.png');
+			$mx=190;$my=270;
+			if ($this->DefOrientation=='L') {$mx=270;$my=190;}
+			for($x=10;$x<$mx;$x+=30) {
+				for ($y=20;$y<$my;$y+=30) {
+					$this->Rotate(60,$x,$y);
+					$this->Image($img,$x,$y,32,20);
+					$this->Rotate(0);
+				}
+			}
+		}
+		if($this->angle!=0)	{
+			$this->angle=0;
+			$this->_out('Q');
+		}
+		parent::_endpage();
+	}
+	/* end text rotation patch */
+
+	protected function getFontName() { return $this->myFontName; }
+
 	function Cell($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=false, $link='') {
 		if (is_null($txt)) $txt="";
 		if (is_numeric($txt)) $txt=strval($txt);
@@ -59,7 +105,8 @@ class PrintCommon extends FPDF {
 		// convert to iso-latin1 from html
 		// special handling of &asymp; entity
 		$txt=str_replace("&asymp;","± ",$txt);
-		$txt=utf8_decode(html_entity_decode($txt));
+		$txt=html_entity_decode($txt);
+		if (!$this->useUTF8) $txt=utf8_decode($txt);
 		// let string fit into box
 		for($n=strlen($txt);$n>0;$n--) {
 			$str=substr($txt,0,$n);
@@ -72,6 +119,48 @@ class PrintCommon extends FPDF {
 		parent::Cell($w, $h, $txt, $border, $ln, $align, $fill, $link);
 	}
 
+	function SetFont($family,$style='',$size=0) {
+		// not sure why, but seems that UTF fonts are bigger than latin1 fonts
+		// so analyze and reduce size when required
+		switch (strtolower($family)) { // alllow any combination of upper/lower case
+			case "dejavu": if ($size>1) $size-=0.5; // no break;
+			case "free": if ($size>0) $size-=0.5; break;
+		}
+		parent::SetFont($family,$style,$size);
+	}
+
+	function SetFontSize($size) {
+		// not sure why, but seems that UTF fonts are bigger than latin1 fonts
+		// so analyze and reduce size when required
+		switch (strtolower($this->FontFamily)) { // fpdf stores font family in lowercase
+			case "dejavu": if ($size>1) $size-=0.5; // no break;
+			case "free": if ($size>0) $size-=0.5; break;
+		}
+		parent::SetFontSize($size);
+	}
+
+	function installFonts($font) {
+		$this->useUTF8=true;
+		switch($font) {
+			case 'Courier':
+			case 'Helvetica':
+			case 'Times': $this->useUTF8=false;
+				break;
+			case 'DejaVu':
+			case 'Free':
+				$this->AddFont($font,'',$font.'Sans.ttf',true);
+				$this->AddFont($font,'B',$font.'Sans-Bold.ttf',true);
+				$this->AddFont($font,'I',$font.'Sans-Oblique.ttf',true);
+				$this->AddFont($font,'BI',$font.'Sans-BoldOblique.ttf',true);
+				break;
+			default:
+				$this->myLogger->error("Invalid font name: $font. Using Helvetica");
+				$font="Helvetica";
+				break;
+		}
+		$this->myFontName=$font;
+	}
+
 	/**
 	 * Constructor de la superclase 
 	 * @param {string} orientacion 'landscape' o 'portrait'
@@ -81,20 +170,30 @@ class PrintCommon extends FPDF {
 	 */
 	function __construct($orientacion,$file,$prueba,$jornada=0) {
 		date_default_timezone_set('Europe/Madrid');
-		parent::__construct($orientacion,'mm','A4'); // Portrait or Landscape
-		$this->SetAutoPageBreak(true,1.7); // default margin is 2cm. so enlarge a bit 
-		$this->centro=($orientacion==='Portrait')?107:145;
 		$this->config=Config::getInstance();
 		$this->myLogger= new Logger($file,$this->config->getEnv("debug_level"));
+		parent::__construct($orientacion,'mm','A4'); // Portrait or Landscape
+		$this->SetAutoPageBreak(true,1.7); // default margin is 2cm. so enlarge a bit
+		$this->installFonts($this->config->getEnv("pdf_fontfamily"));
+		$this->centro=($orientacion==='Portrait')?107:145;
 		$this->myDBObject=new DBObject($file);
-		$this->prueba=$this->myDBObject->__getObject("Pruebas",$prueba);
-		$this->federation=Federations::getFederation(intval($this->prueba->RSCE));
+		$this->prueba=null;
+		$this->federation=Federations::getFederation(0); // defaults to RSCE
+		if ($prueba!=0) {
+			$this->prueba=$this->myDBObject->__getObject("Pruebas",$prueba);
+			$this->federation=Federations::getFederation(intval($this->prueba->RSCE));
+		}
 		$this->strClub=($this->federation->isInternational())?_('Country'):_('Club');
         $fedName=$this->federation->get('Name');
 		// $this->myLogger->trace("Federation is: ".json_decode($this->federation));
-		$this->club=$this->myDBObject->__getObject("Clubes",$this->prueba->Club); // club organizador
-		if ($jornada!=0) $this->jornada=$this->myDBObject->__getObject("Jornadas",$jornada);
-		else $this->jornada=null;
+		$this->club=null;
+		if ($prueba!=0){
+			$this->club=$this->myDBObject->__getObject("Clubes",$this->prueba->Club); // club organizador
+		}
+		$this->jornada=null;
+		if ($jornada!=0) {
+			$this->jornada=$this->myDBObject->__getObject("Jornadas",$jornada);
+		}
 		// on international contests, use logos from federation
         $this->icon=getIconPath($fedName,$this->federation->get('OrganizerLogo'));
         $this->icon2=getIconPath($fedName,$this->federation->get('ParentLogo'));
@@ -107,12 +206,32 @@ class PrintCommon extends FPDF {
 		// handle registration info related to PDF generation
         $this->authManager=new AuthManager("print_common");
         $this->regInfo=$this->authManager->getRegistrationInfo();
-        if ( ($this->regInfo==null) || ($this->regInfo['Serial']==="00000000") ) $this->icon="agilitycontest.png";
+        if ( ($this->regInfo==null) || ($this->regInfo['Serial']==="00000000") ) {
+			$this->icon=getIconPath($fedName,"agilitycontest.png");;
+		}
 		// evaluate number of decimals to show when printing timestamps
 		$this->timeResolution=($this->config->getEnv('crono_miliseconds')=="0")?2:3;
-		$this->myLogger->trace("Time resolution is ".$this->timeResolution);
+		// $this->myLogger->trace("Time resolution is ".$this->timeResolution);
 	}
 
+	// return the minimum nomber of dogs for team on this journey
+	function getMinDogs() {
+		$mindogs=1;
+			switch(intval($this->jornada->Equipos3)) {
+				case 1:	return 3; // old style 3 best of 4
+				case 2:	return 2; // 2 best of 3
+				case 3: return 3; // 3 best of 4
+				default: break;
+			}
+			switch(intval($this->jornada->Equipos4)) {
+				case 1:	return 4; // old style 4 combined
+				case 2:	return 2; // 2 combined
+				case 3: return 3; // 3 combined
+				case 4: return 4; // 4 combined
+				default: break;
+			}
+		return $mindogs;
+	}
 
 	function getCatString($cat) {
 		$catstr=$this->federation->get('IndexedModeStrings');
@@ -148,7 +267,7 @@ class PrintCommon extends FPDF {
 	 * @param {string} $title Titulo a imprimir en el cajetin
 	 */
 	function print_commonHeader($title) {
-		// $this->myLogger->enter();
+		//$this->myLogger->enter();
 		// pintamos Logo del club organizador a la izquierda y logo de la canina a la derecha
 		// recordatorio
 		// 		$this->Image(string file [, float x [, float y [, float w [, float h [, string type [, mixed link]]]]]])
@@ -158,22 +277,22 @@ class PrintCommon extends FPDF {
 		$this->Image($this->icon,$this->GetX(),$this->GetY(),25.4);
 		$this->SetXY($this->w - 35.4,10);
 		$this->Image($this->icon2,$this->GetX(),$this->GetY(),25.4);
-	
+
 		// pintamos nombre de la prueba
 		$this->SetXY($this->centro -50,10);
-		$this->SetFont('Helvetica','BI',10); // Helvetica bold italic 10
+		$this->SetFont($this->getFontName(),'BI',10); // bold italic 10
         if (intval($this->prueba->ID)>1) { // solo apuntamos nombre de la prueba si no es la prueba por defecto
             $str=$this->prueba->Nombre." - ".$this->club->Nombre;
             $this->Cell(100,10,$str,0,0,'C',false);// Nombre de la prueba centrado
         }
 		$this->Ln(); // Salto de línea
-		
+
 		// pintamos el titulo en un recuadro
-		$this->SetFont('Helvetica','B',20); // Helvetica bold 20
+		$this->SetFont($this->getFontName(),'B',20); // bold 20
 		$this->SetXY($this->centro -60,20);
 		$this->Cell(120,10,$title,1,0,'C',false);// Nombre de la prueba centrado
 		$this->Ln(15); // Salto de línea
-		// $this->myLogger->leave();
+		//$this->myLogger->leave();
 	}
 	
 	// Pie de página
@@ -182,21 +301,22 @@ class PrintCommon extends FPDF {
 		$this->SetY(-15);
 		// copyright
 		$ver=$this->config->getEnv("version_name");
-		$this->SetFont('Helvetica','I',6);
+		$this->SetFont($this->getFontName(),'I',6);
 		$this->Cell(60,10,"AgilityContest-$ver Copyright 2013-2015 by J.A.M.C.",0,0,'L');
 		// Número de página
-		$this->SetFont('Helvetica','IB',8);
-		$this->Cell(70,10,_('Page').' '.$this->PageNo().'/{nb}',0,0,'C');
+		$this->Cell(40,10,_('Date').': '.date("Y/m/d H:i:s"),0,0,'C');
+		$this->SetFont($this->getFontName(),'IB',8);
+		$this->Cell(30,10,_('Page').' '.$this->PageNo().' / {nb}',0,0,'C');
 		// informacion de registro
 		$ri=$this->authManager->getRegistrationInfo();
-		$this->SetFont('Helvetica','I',6);
+		$this->SetFont($this->getFontName(),'I',6);
 		$this->Cell(60,10,_("This copy is licensed to club").": {$ri['Club']}",0,0,'R');
 	}
 
 	// Identificacion de la Manga
 	function print_identificacionManga($manga,$categoria) {
 		// pintamos "identificacion de la manga"
-		$this->SetFont('Helvetica','B',12); // Helvetica bold 15
+		$this->SetFont($this->getFontName(),'B',12); // bold 15
 		$str  = $this->jornada->Nombre . " - " . $this->jornada->Fecha;
 		$tmanga= Mangas::$tipo_manga[$manga->Tipo][1];
 		$str2 = "$tmanga - $categoria";
@@ -239,7 +359,7 @@ class PrintCommon extends FPDF {
 	}
 	
 	function ac_header($idx,$size) {
-		$this->SetFont('Helvetica','B',$size);
+		$this->SetFont($this->getFontName(),'B',$size);
 		if($idx==1) {
 			$this->ac_SetFillColor($this->config->getEnv('pdf_hdrbg1')); // naranja
 			$this->ac_SetTextColor($this->config->getEnv('pdf_hdrfg1')); // negro
@@ -254,7 +374,7 @@ class PrintCommon extends FPDF {
 	function ac_row($idx,$size) {
 		$bg=$this->config->getEnv('pdf_rowcolor1');
 		if ( ($idx&0x01)==1)$bg=$this->config->getEnv('pdf_rowcolor2');
-		$this->SetFont('Helvetica','',$size);
+		$this->SetFont($this->getFontName(),'',$size);
 		$this->ac_SetFillColor($bg); // color de la fila
 		$this->ac_SetTextColor('#000000'); // negro
 		$this->ac_SetDrawColor($this->config->getEnv('pdf_linecolor')); // line color

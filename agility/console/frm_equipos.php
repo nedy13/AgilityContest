@@ -1,7 +1,7 @@
 <!-- 
 frm_equipos.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -219,8 +219,8 @@ function showInscripcionesByTeam(index,team){
 			{ field:'Dorsal',	width:6,        sortable:true, align: 'right',	title: '<?php _e('Dorsal'); ?>' },
 			{ field:'Nombre',	width:15,       sortable:true, align: 'right',	title: '<?php _e('Name'); ?>' },
 			{ field:'Licencia',	width:6,        sortable:true, align: 'center', title: '<?php _e('Lic');    ?>' },
-			{ field:'Categoria',width:4,        sortable:false, align: 'center',title: '<?php _e('Cat');    ?>' },
-			{ field:'Grado',	width:6,        sortable:false, align: 'center',title: '<?php _e('Grade');  ?>' },
+			{ field:'Categoria',width:4,        sortable:false, align: 'center',title: '<?php _e('Cat');    ?>' ,formatter:formatCategoria},
+			{ field:'Grado',	width:6,        sortable:false, align: 'center',title: '<?php _e('Grade');  ?>', formatter:formatGrado },
 			{ field:'NombreGuia',	width:25,   sortable:true, align: 'right',	title: '<?php _e('Handler'); ?>' },
 			{ field:'NombreClub',	width:15,   sortable:true, align: 'right',	title: '<?php _e('Club');   ?>' },
 			{ field:'NombreEquipo',	hidden:true },

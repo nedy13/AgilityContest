@@ -17,15 +17,32 @@ class INTL4 extends Federations {
             'International' => 1,
             'WideLicense' => false, // some federations need extra print space to show license ID
             'Recorridos' => array('Common course',"Standard + Medium / Small + Toy","Separate courses"),
+            'ListaGradosShort' => array(
+                '-' => 'Sin especificar',
+                'Baja' => 'Out',
+                'GI' => 'A1',
+                'GII'=> 'A2',
+                'GIII' => 'A3', //  invalid for 2-grades contests
+                'P.A.' => 'A0',
+                'P.B.' => 'T.d.', // "Test dog"
+                'Ret.' => 'Ret.'
+            ),
             'ListaGrados'    => array (
-                '-' => ' ',
-                'Baja' => 'Retired',
+                '-' => 'Not specified ',
                 'GI' => 'Grade I',
                 'GII'=> 'Grade II',
-                'GIII' => 'Grade III', // no existe
+                // 'GIII' => 'Grade III', // no existe
                 'P.A.' => 'Grade 0',
-                'P.B.' => 'Trial dog',
-                'Ret.' => 'Retirado',
+                'P.B.' => 'Test dog',
+                'Baja' => 'Temporary out',
+                'Ret.' => 'Retired'
+            ),
+            'ListaCategoriasShort' => array (
+                '-' => '-',
+                'L' => 'Large',
+                'M' => 'Medium',
+                'S' => 'Small',
+                'T' => 'Toy'
             ),
             'ListaCategorias' => array (
                 '-' => 'Not especified',
@@ -58,7 +75,8 @@ class INTL4 extends Federations {
                 "ST"=>"Small/Tiny",
                 "MS"=>"Medium/Small", // invalid
                 "LMS" => 'Common LMS',
-                "LMST",'Common LMST'
+                "LMST" => 'Common LMST',
+                "-LMST" => ''
             )
         );
     }
@@ -67,7 +85,7 @@ class INTL4 extends Federations {
      * Evalua la calificacion parcial del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $m datos de la manga
+     * @param {object} $m datos de la manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
@@ -79,13 +97,15 @@ class INTL4 extends Federations {
      * Evalua la calificacion final del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $c1 datos de la primera manga
-     * @param {array} $c2 datos de la segunda manga
+     * @param {object} $m1 datos de la primera manga
+     * @param {object} $m2 datos de la segunda manga
+     * @param {array} $c1 resultados de la primera manga
+     * @param {array} $c2 resultados de la segunda manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
-    public function evalFinalCalification($p,$j,$c1,$c2,&$perro,$puestocat){
-        parent::evalFinalCalification($p,$j,$c1,$c2,$perro,$puestocat);
+    public function evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,&$perro,$puestocat){
+        parent::evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,$perro,$puestocat);
     }
 }
 ?>

@@ -2,7 +2,7 @@
 /*
 print_listaPerros.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -99,6 +99,7 @@ class Print_ListaPerros extends PrintCommon {
 
 		$rowcount=0;
 		foreach($this->lista as $perro) {
+			$this->myLogger->trace("perro: ".$perro['Nombre']);
 			// $this->cell(width,height,text,border,start,align,fill)
 			if (($rowcount%47)==0) {
 				$this->addPage();

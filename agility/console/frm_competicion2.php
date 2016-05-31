@@ -1,7 +1,7 @@
 <!-- 
 frm_competicion2.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -26,14 +26,14 @@ require_once("dialogs/dlg_ordensalida.inc");
 require_once("dialogs/dlg_competicion.inc");
 switch(http_request("tipo","s","std")) {
     case "eq3":
-        if ( ! $am->allowed(ENABLE_TEAM3)) {
+        if ( ! $am->allowed(ENABLE_TEAMS)) {
             require_once("unregistered.html");
             return 0;
         }
         require_once("dialogs/dlg_resultados_eq3.inc");
         break;
     case "eq4":
-        if ( ! $am->allowed(ENABLE_TEAM4)) {
+        if ( ! $am->allowed(ENABLE_TEAMS)) {
             require_once("unregistered.html");
             return 0;
         }
@@ -48,11 +48,11 @@ switch(http_request("tipo","s","std")) {
 ?>
  	
 <!-- PANEL INFORMATIVO SOBRE LA MANGAS DE ESTA JORNADA -->
-<div id="competicion_info" style="width:975px">
+<div id="competicion_info" style="width:100%">
 
 	<!-- paneles de lista de mangas y datos de cada manga -->
 	<div id="competicion_infolayout" class="easyui-layout" style="height:400px">
-		<div data-options="region:'west',title:'<?php _e('Journey rounds');?>',split:true,collapsed:false" style="width:250px">
+		<div data-options="region:'west',title:'<?php _e('Journey rounds');?>',split:true,collapsed:false" style="width:25%">
 			<!-- Tabla que contiene la lista de Mangas de la jornada -->
 			<table id="competicion-listamangas" style="padding:50px"></table>
 		</div>

@@ -2,7 +2,7 @@
 /*
 print_ordenTandas.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -62,7 +62,7 @@ class PrintTandas extends PrintCommon {
 		// cabecera comun
 		$this->print_commonHeader(_("Journey timetable"));
 		// pintamos identificacion de la jornada
-		$this->SetFont('Helvetica','B',12); // Helvetica bold 15pt
+		$this->SetFont($this->getFontName(),'B',12); // bold 15pt
 		$str  = _("Journey").": {$this->jornada->Nombre} - {$this->jornada->Fecha}";
 		$this->Cell(100,7,$str,0,0,'L',false); // a un lado nombre y fecha de la jornada
 		$this->Ln(5);
@@ -76,7 +76,7 @@ class PrintTandas extends PrintCommon {
 		$this->print_commonFooter();
 		// Pone un warning sobre la hora estimada
 		$this->SetXY(10,-20);
-		$this->SetFont('Helvetica','IB',10);
+		$this->SetFont($this->getFontName(),'IB',10);
 		$this->Cell(190,5,'(*) '._('Notice').' : '._('Provided time is only an estimation and cannot be considered as official'),0,0,'L');
 	}
 	
@@ -84,11 +84,11 @@ class PrintTandas extends PrintCommon {
 		$this->myLogger->enter();
 		$this->ac_header(1,10);
 		$this->setX(10);
-		$this->Cell(75,7,_("Activity"),'TLBR',0,'L',true);
+		$this->Cell(80,7,_("Activity"),'TLBR',0,'L',true);
 		$this->Cell(25,7,_("Ring"),'TLB',0,'C',true);
 		$this->Cell(15,7,"# "._("Competitors"),'TLB',0,'C',true);
-		$this->Cell(60,7,_("Comments"),'TLB',0,'R',true);
-		$this->Cell(15,7,_("Time")." (*)",'TLBR',0,'C',true);
+		$this->Cell(50,7,_("Comments"),'TLB',0,'R',true);
+		$this->Cell(20,7,_("Hour")." (*)",'TLBR',0,'C',true);
 		$this->Ln();
 		$this->myLogger->leave();
 	}
@@ -111,9 +111,9 @@ class PrintTandas extends PrintCommon {
 			$this->Cell(10,7,$rowcount+1,'LBR',0,'C',true);
 			// imprimimos nombre de la tanda
 			$this->ac_row($rowcount,8);
-			$this->SetFont('Helvetica','B',8);
-			$this->Cell(65,7,$row['Nombre'],'LBR',0,'R',true); // nombre en negritas
-			$this->SetFont('Helvetica','',8);
+			$this->SetFont($this->getFontName(),'B',8);
+			$this->Cell(70,7,$row['Nombre'],'LBR',0,'R',true); // nombre en negritas
+			$this->SetFont($this->getFontName(),'',8);
 			$this->Cell(25,7,$row['NombreSesion'],'LBR',0,'R',true);
 			if ($row['Tipo']!=0) {
 				$str="( Prueba={$row['Prueba']} ) AND ( Jornada={$row['Jornada']} ) AND (Manga={$row['Manga']})";
@@ -133,8 +133,8 @@ class PrintTandas extends PrintCommon {
 			} else {
 				$this->Cell(15,7,"----",'LBR',0,'C',true);
 			}
-			$this->Cell(60,7,$row['Comentario'],'LB',0,'C',true);
-			$this->Cell(15,7,$row['Horario'],'LBR',0,'C',true);
+			$this->Cell(50,7,$row['Comentario'],'LB',0,'C',true);
+			$this->Cell(20,7,$row['Horario'],'LBR',0,'C',true);
 			$rowcount++;
 			$this->Ln(7);
 		}

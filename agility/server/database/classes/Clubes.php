@@ -2,7 +2,7 @@
 /*
 clubes.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -192,7 +192,7 @@ class Clubes extends DBObject {
 		$where="1";
 		if ($search!=='') $where="( (Nombre LIKE '%$search%') OR (Provincia LIKE '%$search%') OR (Pais LIKE '%$search%') ) ";
 		$result=$this->__select(
-				/* SELECT */ "*",
+				/* SELECT */ "*, Logo AS LogoClub",
 				/* FROM */ "Clubes",
 				/* WHERE */ "$fedstr AND $where",
 				/* ORDER BY */ $sort,
@@ -213,12 +213,13 @@ class Clubes extends DBObject {
 		if ($id<=0) return $this->error("Invalid Club ID:$id");
 		// make query
 		$obj=$this->__getObject("Clubes",$id);
-		if (!is_object($obj))	return $this->error("No Dog found with ID=$id");
+		if (!is_object($obj))	return $this->error("No Club found with ID=$id");
 		$data= json_decode(json_encode($obj), true); // convert object to array
 		$data['Operation']='update'; // dirty trick to ensure that form operation is fixed
 		$this->myLogger->leave();
 		return $data;
 	}
+
 	/** 
 	 * return a dupla ID Nombre,Provincia list according select and federation criteria
 	 * return data if success; null on error
@@ -306,7 +307,7 @@ class Clubes extends DBObject {
 		$row=$this->__selectObject("Logo","Guias,Clubes","(Guias.Club=Clubes.ID) AND (Guias.ID=$id)");
 		if (!$row) return $this->error($this->conn->error);
 		$name=$row->Logo;
-		$fname=_getIconPath($this->curFederation->get('Name'),$name);
+		$fname=getIconPath($this->curFederation->get('Name'),$name);
 		if (!file_exists($fname)) {
 			$this->myLogger->notice("Logo file $fname does not exists");
 			$fname=getIconPath($this->curFederation->get('Name'),$this->curFederation->get('Logo')); // use default name

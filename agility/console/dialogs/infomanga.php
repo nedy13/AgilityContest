@@ -1,7 +1,7 @@
 <!-- 
 infomanga.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -383,11 +383,6 @@ $('#dmanga_Juez2').combogrid({
 
 $('#competicion-formdatosmanga').form({
 	onLoadSuccess: function(data) {
-		// fix trs when data is given as mts/second
-		if (data.TRS_L_Tipo==6) $("#dmanga_TRS_L_Factor").val(data.TRS_L_Factor/10.0);
-		if (data.TRS_M_Tipo==6) $("#dmanga_TRS_M_Factor").val(data.TRS_M_Factor/10.0);
-		if (data.TRS_S_Tipo==6) $("#dmanga_TRS_S_Factor").val(data.TRS_S_Factor/10.0);
-		if (data.TRS_T_Tipo==6) $("#dmanga_TRS_T_Factor").val(data.TRS_T_Factor/10.0);
 		// fix appearance according mode, federation, and so
 		dmanga_setRecorridos();
 	},

@@ -2,7 +2,7 @@
 /*
 print_equiposByJornada.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -40,6 +40,8 @@ class ResultadosByEquipos4 extends PrintCommon {
     protected $equipos; // lista de equipos
     protected $mode; // modo de la manga
     protected $eqmgr; // objeto "Equipos"
+    protected $mindogs; // to evaluate NotPresent count
+
     protected $defaultPerro = array( // participante por defecto para garantizar que haya 4perros/equipo
         'Dorsal' => '-',
         'Perro' => 0,
@@ -62,8 +64,10 @@ class ResultadosByEquipos4 extends PrintCommon {
 	/**
 	 * Constructor
      * @param {integer} $prueba Prueba ID
-     * @param {integer} $jornada Jormada ID
+     * @param {integer} $jornada
      * @param {integer} $manga Manga ID
+     * @param {object} $resultados
+     * @param {integer} $mode
 	 * @throws Exception
 	 */
 	function __construct($prueba,$jornada,$manga,$resultados,$mode) {
@@ -71,9 +75,23 @@ class ResultadosByEquipos4 extends PrintCommon {
         $this->manga=$manga;
         $this->resultados=$resultados;
         $this->mode=$mode;
-        $tmode=($this->jornada->Equipos3!=0)?3:4;
-        $this->equipos=Resultados::getTeamResults($resultados['rows'],$prueba,$jornada,$tmode);
+        $mindogs=0;
+        switch(intval($this->jornada->Equipos3)) {
+            case 1:$mindogs=3; break; // old style 3 best of 4
+            case 2:$mindogs=2; break; // 2 besto of 3
+            case 3:$mindogs=3; break; // 3 best of 4
+            default: break;
+        }
+        switch(intval($this->jornada->Equipos4)) {
+            case 1:$mindogs=4; break; // old style 4 combined
+            case 2:$mindogs=2; break; // 2 combined
+            case 3:$mindogs=3; break; // 3 combined
+            case 4:$mindogs=4; break; // 4 combined
+            default: break;
+        }
+        $this->equipos=Resultados::getTeamResults($resultados['rows'],$prueba,$jornada,$mindogs);
         $this->eqmgr=new Equipos("print_resultadosByEquipos4",$prueba,$jornada);
+        $this->mindogs=mindogs;
 	}
 	
 	// Cabecera de página
@@ -84,7 +102,7 @@ class ResultadosByEquipos4 extends PrintCommon {
         // Si es la primera hoja pintamos datos tecnicos de la manga
         if ($this->PageNo()!=1) return;
 
-        $this->SetFont('Helvetica','B',9); // bold 9px
+        $this->SetFont($this->getFontName(),'B',9); // bold 9px
         $jobj=new Jueces("print_resultadosEquipos3");
         $juez1=$jobj->selectByID($this->manga->Juez1);
         $juez2=$jobj->selectByID($this->manga->Juez2);
@@ -126,7 +144,7 @@ class ResultadosByEquipos4 extends PrintCommon {
         // evaluate logos
         $logos=array('null.png','null.png','null.png','null.png');
         if ($team['Nombre']==="-- Sin asignar --") {
-            $logos[0]='agilitycontest.png';
+            $logos[0]=getIconPath($this->federation->get('Name'),"agilitycontest.png");
         } else {
             $count=0;
             foreach($members as $miembro) {
@@ -148,9 +166,9 @@ class ResultadosByEquipos4 extends PrintCommon {
             $this->SetX(22);
             $this->ac_row($id,8);
             $this->Cell(6,3,$perro['Dorsal'],'LTBR',0,'L',true);
-            $this->SetFont('Helvetica','B',8);
+            $this->SetFont($this->getFontName(),'B',8);
             $this->Cell(13,3,$perro['Nombre'],'LTBR',0,'C',true);
-            $this->SetFont('Helvetica','',7);
+            $this->SetFont($this->getFontName(),'',7);
             $this->Cell(28,3,$perro['NombreGuia'],'LTBR',0,'R',true);
             $this->Ln(3);
             // sumamos faltas, tocados y rehuses
@@ -160,7 +178,7 @@ class ResultadosByEquipos4 extends PrintCommon {
             $team['Eliminados']+=$perro['Eliminado'];
             $team['NoPresentados']+=$perro['NoPresentado'];
         }
-        $team['NoPresentados'] += 4-count($members);
+        for($n=count($members);$n<$this->mindogs;$n++) $team['NoPresentados']++;
 
         // caja de datos del equipo
         $this->SetXY(70,$y);
@@ -192,7 +210,7 @@ class ResultadosByEquipos4 extends PrintCommon {
 
         $this->ac_SetFillColor("#c0c0c0"); // light gray
         $this->SetXY(71,7+$y+1);
-        $this->SetFont('Helvetica','I',8); // italic 8px
+        $this->SetFont($this->getFontName(),'I',8); // italic 8px
         $this->Cell(15,2.5,_("Flt"),0,0,'L',false);
         $this->Cell(15,2.5,_("Ref"),0,0,'L',false);
         $this->Cell(15,2.5,_("Tch"),0,'L',false);
@@ -202,7 +220,7 @@ class ResultadosByEquipos4 extends PrintCommon {
         $this->Cell(26,2.5,_("Penaliz"),0,0,'L',false);
 
         $this->SetXY(71,6+$y+1);
-        $this->SetFont('Helvetica','B',10); // italic 8px
+        $this->SetFont($this->getFontName(),'B',10); // italic 8px
         $this->Cell(15,7,$team['Faltas'],0,0,'R',false);
         $this->Cell(15,7,$team['Rehuses'],0,0,'R',false);
         $this->Cell(15,7,$team['Tocados'],0,0,'R',false);

@@ -2,7 +2,7 @@
 /*
 Dogs.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -25,21 +25,6 @@ class Dogs extends DBObject {
 	function __construct() {
 		parent::__construct("Dogs");
 	}
-
-    /**
-     * Evaluate if a dog has a mixBreed License
-     * @param $lic
-     */
-    static function isMixBreed($lic){
-        $lic=strval($lic);
-        $lic=trim($lic);
-        $lic=strtoupper($lic);
-        if (strlen($lic)<4) return false;
-        if (substr($lic,0,1)=='0') return false;
-        if (substr($lic,0,1)=='A') return false;
-        if (substr($lic,0,1)=='B') return false;
-        return true;
-    }
 
 	/**
 	 * Insert a new dog into database
@@ -280,15 +265,22 @@ class Dogs extends DBObject {
 			// ask how many heights has selected federation
 			$fedinfo=Federations::getFederation(intval($fed));
 			if ($fedinfo) {
-				if ($fedinfo->get('Heights')===3) $f="(Categoria <> 'T') ";
-			} else {
-				$this->myLogger->error("CategoriasPerro: invalid federation ID:$fed");
+				$result =array();
+				foreach ($fedinfo->get('ListaCategorias') as $cat => $name) {
+					if ($cat==="-")
+						array_push($result,array("Categoria"=>$cat,"Observaciones"=>$name,"selected"=>1));
+					else array_push($result,array("Categoria"=>$cat,"Observaciones"=>$name,"selected"=>0));
+				}
+				return $result;
 			}
+			$this->myLogger->error("CategoriasPerro: invalid federation ID:$fed");
 		}
+		// if federation is not provided or invalid, extract all  available values from database
 
-		// evaluate offset and row count for query
+		// evaluate search string for query
 		$q=http_request("q","s","");
-		$like =  ($q==="") ? "WHERE $f" : " WHERE $f AND Categoria LIKE '%".$q."%'";
+		$like="";
+		if ($q=="") $like= "WHERE Categoria LIKE '%".$q."%'";
 	
 		// query to retrieve table data
 		$sql="SELECT Categoria,Observaciones FROM Categorias_Perro ".$like." ORDER BY Categoria";
@@ -299,8 +291,7 @@ class Dogs extends DBObject {
 		$result = array();
 		while($row = $rs->fetch_array(MYSQLI_ASSOC)){
 			// add a default state for comobobox
-			if ($row["Categoria"]==='-') 
-				{ $row["selected"]=1; $row[2]=1;}
+			if ($row["Categoria"]==='-') { $row["selected"]=1; $row[2]=1;}
 			else { $row["selected"]=0; $row[2]=0;}
 			// and store into result array
 			array_push($result, $row);
@@ -327,13 +318,23 @@ class Dogs extends DBObject {
 			$fedinfo=Federations::getFederation(intval($fed));
 			if ($fedinfo) {
 				if ($fedinfo->get('Grades')===2) $f="(Grado <> 'GIII') ";
-			} else {
-				$this->myLogger->error("CategoriasPerro: invalid federation ID:$fed");
+
+                $result =array();
+                foreach ($fedinfo->get('ListaGrados') as $cat => $name) {
+                    if ($cat==="-")
+                        array_push($result,array("Grado"=>$cat,"Comentarios"=>$name,"selected"=>1));
+                    else array_push($result,array("Grado"=>$cat,"Comentarios"=>$name,"selected"=>0));
+                }
+                return $result;
 			}
+            $this->myLogger->error("CategoriasPerro: invalid federation ID:$fed");
 		}
-		// evaluate offset and row count for query
+
+        // if federation is not provided or invalid, extract all  available values from database
+		// evaluate search string for query
 		$q=http_request("q","s","");
-		$like =  ($q==="") ? "WHERE $f" : " WHERE $f AND ( Grado LIKE '%".$q."%' )";
+        $like="";
+        if ($q=="") $like= " WHERE Grado LIKE '%".$q."%'";
 
 		// query to retrieve table data
 		$sql="SELECT Grado,Comentarios FROM Grados_Perro ".$like." ORDER BY Grado";

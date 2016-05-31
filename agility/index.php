@@ -4,7 +4,7 @@ header("Access-Control-Allow-Origin: https://{$_SERVER['SERVER_NAME']}/agility",
 /*
  index.php
 
- Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+ Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
  This program is free software; you can redistribute it and/or modify it under the terms
  of the GNU General Public License as published by the Free Software Foundation;
@@ -49,7 +49,7 @@ require_once(__DIR__. "/server/upgradeVersion.php");
 		GNU General Public License as published by the Free Software Foundation; either version 2 of the License, 
 		or (at your option) any later version." />
 <!-- try to disable zoom in tablet on double click -->
-<meta content='width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=no;' name='viewport' />
+<meta name="viewport" content="target-densitydpi=device-dpi, width=device-width, initial-scale=1.0, maximum-scale=2.0, minimum-scale=0.5, user-scalable=yes"/>
 <title>AgilityContest (Public)</title>
 <link rel="stylesheet" type="text/css" href="/agility/lib/jquery-easyui-1.4.2/themes/<?php echo $config->getEnv('easyui_theme'); ?>/easyui.css" />
 <link rel="stylesheet" type="text/css" href="/agility/lib/jquery-easyui-1.4.2/themes/icon.css" />
@@ -57,7 +57,7 @@ require_once(__DIR__. "/server/upgradeVersion.php");
 <link rel="stylesheet" type="text/css" href="/agility/css/datagrid.css" />
 <link rel="stylesheet" type="text/css" href="/agility/css/videowall_css.php" />
 <link rel="stylesheet" type="text/css" href="/agility/css/public_css.php" />
-<script src="/agility/lib/jquery-1.11.3.min.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/lib/jquery-1.12.3.min.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/jquery.easyui.min.js" type="text/javascript" charset="utf-8" ></script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-dnd/datagrid-dnd.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-view/datagrid-detailview.js" type="text/javascript" charset="utf-8" > </script>
@@ -66,9 +66,11 @@ require_once(__DIR__. "/server/upgradeVersion.php");
 <script src="/agility/lib/jquery-fileDownload-1.4.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/sprintf.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/easyui-patches.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/datagrid_formatters.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/common.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/auth.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/competicion.js.php" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/results_and_scores.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/public/public.js.php" type="text/javascript" charset="utf-8" > </script>
 <script type="text/javascript" charset="utf-8">
 
@@ -76,6 +78,7 @@ require_once(__DIR__. "/server/upgradeVersion.php");
 loadConfiguration();
 getLicenseInfo();
 getFederationInfo();
+workingData.timeout=null;
 
 /* not really needed for public access, but stay here for compatibility */
 function initialize() {
@@ -135,6 +138,15 @@ function myRowStyler(idx,row) {
         margin-top:7px;
     }
 
+	/* tip for fix data size in smartphones ----------- */
+	@media only screen and (max-width: 760px) {
+
+		.datagrid-cell {
+			font-size:0.75em;
+		}
+
+	}
+
 </style>
 
 </head>
@@ -146,7 +158,7 @@ function myRowStyler(idx,row) {
 <!--  CUERPO PRINCIPAL DE LA PAGINA (se modifica con el menu) -->
 
 <div id="public-dialog" style="width:400px;height:200px;padding:10px" class="easyui-dialog"
-	data-options="title: 'Indicar Prueba, Jornada y Vista',iconCls: 'icon-list',buttons: '#public-Buttons',collapsible:false, minimizable:false,
+	data-options="title: '<?php _e("Select contest, journey and view");?>',iconCls: 'icon-list',buttons: '#public-Buttons',collapsible:false, minimizable:false,
 		maximizable:false, closable:true, closed:false, shadow:true, modal:true">
 	<form id="public-form">       		
     	<div class="fitem">
@@ -235,8 +247,8 @@ $('#public-Jornada').combogrid({
 		{ field:'Grado2',		width:8, sortable:false,	align:'center', title: 'G-II   ' },
 		{ field:'Grado3',		width:8, sortable:false,	align:'center', title: 'G-III  ' },
 		{ field:'Open',		    width:8, sortable:false,	align:'center', title: 'Open   ' },
-		{ field:'Equipos3',		width:8, sortable:false,	align:'center', title: 'Eq.3x4 ' },
-		{ field:'Equipos4',		width:8, sortable:false,	align:'center', title: 'Eq.Conj' },
+		{ field:'Equipos3',		width:8, sortable:false,	align:'center', title: 'Eq.Best' },
+		{ field:'Equipos4',		width:8, sortable:false,	align:'center', title: 'Eq.Comb' },
 		{ field:'PreAgility',	width:8, sortable:false,	align:'center', title: 'Pre. 1 ' },
 		{ field:'PreAgility2',	width:8, sortable:false,	align:'center', title: 'Pre. 2 ' },
 		{ field:'KO',			width:8, sortable:false,	align:'center', title: 'K.O.   ' },
@@ -245,7 +257,7 @@ $('#public-Jornada').combogrid({
 	onBeforeLoad: function(param) { 
 		param.Operation='enumerate';
 		param.Prueba=workingData.prueba;
-		param.AllowClosed=0;
+		param.AllowClosed=1;
 		param.HideUnassigned=1;
 		return true;
 	}
@@ -270,21 +282,20 @@ function public_acceptSelection() {
     var page='/agility/console/frm_notavailable.php';
 	switch (o){
 	case 'inscritos':
-        if (isJornadaEq3() ) page="/agility/public/pb_inscripciones_equipos.php";
-        else if (isJornadaEq4() ) page="/agility/public/pb_inscripciones_equipos.php";
+        if (isJornadaEqMejores() ) page="/agility/public/pb_inscripciones_equipos.php";
+        else if (isJornadaEqConjunta() ) page="/agility/public/pb_inscripciones_equipos.php";
         else page="/agility/public/pb_inscripciones.php";
 		break;
 	case 'ordensalida':
 		page="/agility/public/pb_ordensalida.php";
 		break;
 	case 'parciales':
-        if (isJornadaEq3() ) page="/agility/public/pb_parciales_eq3.php";
-        else if (isJornadaEq4() ) page="/agility/public/pb_parciales_eq4.php";
+        if (isJornadaEqMejores() ) page="/agility/public/pb_parciales_eq3.php";
+        else if (isJornadaEqConjunta() ) page="/agility/public/pb_parciales_eq4.php";
         else page="/agility/public/pb_parciales.php";
 		break;
 	case 'clasificaciones':
-        if (isJornadaEq3() ) page="/agility/public/pb_finales_eq3.php";
-        else if (isJornadaEq4() ) page="/agility/public/pb_finales_eq4.php";
+        if (isJornadaEquipos() ) page="/agility/public/pb_finales_equipos.php";
         else page="/agility/public/pb_finales.php";
         break;
     case 'programa':

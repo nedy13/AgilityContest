@@ -13,7 +13,7 @@ $linfo=$am->getRegistrationInfo();
 <!--
 chrono.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -49,7 +49,13 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 			<span class="chrono_data chrono_dataLbl" id="chrono_TocadosLbl"><?php _e('T');?>:</span>
 			<span class="chrono_data"  id="chrono_Tocados">0</span>
 			<span class="chrono_data chrono_dataLbl" id="chrono_RehusesLbl"><?php _e('R');?>:</span>
-			<span class="chrono_data"  id="chrono_Rehuses">0</span>
+			<span class="chrono_data" id="chrono_Rehuses">0</span>
+			<span class="chrono_data" id="chrono_EliminadoLbl"></span>
+			<span id="chrono_Eliminado" style="display:none">0</span>
+			<span class="chrono_data" id="chrono_NoPresentadoLbl"></span>
+			<span id="chrono_NoPresentado" style="display:none">0</span>
+			<span class="chrono_data" id="chrono_PuestoLbl"></span>
+			<span style="display:none" id="chrono_Puesto"></span>
 			<!-- Cronometro -->
 			<span class="chrono_flags" id="chrono_Manual"></span>
 			<span class="chrono_flags" id="chrono_Intermedio"></span>
@@ -67,6 +73,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 			<span class="chrono_info" id="chrono_Celo"><?php _e('Heat');?></span>
     		<span id="chrono_timestamp" style="display:none"></span>
 			<span id="chrono_Perro" style="display:none" ></span>
+			<span id="chrono_Cat" style="display:none" ></span>
 		</div>
 	</div>
 
@@ -82,19 +89,21 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 	<div id="chrono-buttons" style="width:100%;display:inline-block">
 		<span style="float:left;padding:5px;">
    			<a id="chrono-recBtn" href="#" class="easyui-linkbutton"
-   			   	data-options="iconCls: 'icon-huella'" onclick="chrono_button('crono_rec',{})"><?php _e('Course walk'); ?></a>
+   			   	data-options="iconCls: 'icon-huella'" onclick="chrono_rec();"><?php _e('Course walk'); ?></a>
    			<a id="chrono-fltBtn" href="#" class="easyui-linkbutton"
-   			   	data-options="iconCls: 'icon-hand'" onclick="chrono_button('crono_dat',{'Falta':1})"><?php _e('Fault'); ?></a>
+   			   	data-options="iconCls: 'icon-hand'" onclick="chrono_button('Faltas')"><?php _e('Fault'); ?></a>
    			<a id="chrono-rehBtn" href="#" class="easyui-linkbutton"
-   			   	data-options="iconCls: 'icon-fist'" onclick="chrono_button('crono_dat',{'Rehuse':1})"><?php _e('Refusal'); ?></a>
+			   data-options="iconCls: 'icon-fist'" onclick="chrono_button('Rehuses')"><?php _e('Refusal'); ?></a>
    			<a id="chrono-elimBtn" href="#" class="easyui-linkbutton"
-   			   	data-options="iconCls: 'icon-undo'" onclick="chrono_button('crono_dat',{'Eliminado':1})"><?php _e('Eliminated'); ?></a>
+   			   	data-options="iconCls: 'icon-undo'" onclick="chrono_button('Eliminado')"><?php _e('Eliminated'); ?></a>
    			<a id="chrono-errorBtn" href="#" class="easyui-linkbutton"
 			   data-options="iconCls: 'icon-alert'" onclick="chrono_markError()"><?php _e('Error'); ?></a>
    			<a id="chrono-resetBtn" href="#" class="easyui-linkbutton"
 			   data-options="iconCls: 'icon-undo'" onclick="chrono_sensor('crono_reset',{},1000)"><?php _e('Reset'); ?></a>
 		</span>
 		<span style="float:right;padding:5px;">
+   			<a id="chrono-countDownBtn" href="#" class="easyui-linkbutton"
+			   data-options="iconCls: 'icon-whistle'" onclick="chrono_sensor('salida',{},1000);"><?php _e('CountDown'); ?></a>
    			<a id="chrono-startBtn" href="#" class="easyui-linkbutton"
 			   data-options="iconCls: 'icon-on'" onclick="chrono_sensor('crono_start',{},2000)"><?php _e('Begin'); ?></a>
    			<a id="chrono-intBtn" href="#" class="easyui-linkbutton"
@@ -118,8 +127,8 @@ $('#cronoauto').Chrono( {
 	showMode: 2,
 	onBeforePause: function() { $('#chrono_Intermedio').text('<?php _e("Intermediate");?>').addClass('blink'); return true; },
 	onBeforeResume: function() { $('#chrono_Intermedio').text('').removeClass('blink'); return true; },
-	onUpdate: function(elapsed,running,pause) { 
-		$('#chrono_Tiempo').html(parseFloat(elapsed/1000).toFixed((running)?1:ac_config.numdecs));
+	onUpdate: function(elapsed,running,paused) {
+		$('#chrono_Tiempo').html(toFixedT(parseFloat(elapsed/1000.0),(running)?1:ac_config.numdecs));
 		return true;
 	}
 });
@@ -134,7 +143,7 @@ $('#chrono_Screen-dialog').dialog({
 	maximizable:false,
 	maximized:true,
 	onOpen: function() {
-		startEventMgr(workingData.sesion,chrono_processEvents);
+		startEventMgr();
 		bindKeysToChrono();
 	},
 	buttons:'#chrono-simButtons'
@@ -150,6 +159,8 @@ addTooltip($('#chrono-intBtn').linkbutton(),"<?php _e('Mark intermediate time');
 addTooltip($('#chrono-stopBtn').linkbutton(),"<?php _e('Stop chronometer');?>");
 addTooltip($('#chrono-errorBtn').linkbutton(),"<?php _e('Simulate chrono sensors alignment failure');?>");
 addTooltip($('#chrono-resetBtn').linkbutton(),"<?php _e('Reset chronometer. Set count to zero');?>");
+// addTooltip($('#chrono-countDownBtn').linkbutton(),"<?php _e('Start 15 seconds countdown');?>");
+$('#chrono-countDownBtn').linkbutton(); // mouseover stops timer on tooltip hiding. REVISE IT
 
 // layout
 var layout= {'cols':800, 'rows':300}; // declare base datagrid as A5 sheet
@@ -163,18 +174,22 @@ doLayout(layout,"#chrono_DatosBg",		5,		210,	790,	85	);
 doLayout(layout,"#chrono_PruebaLbl",	10,		5,		665,	17	);
 doLayout(layout,"#chrono_LogoClub",		695,	10,		95,		60	);
 
-doLayout(layout,"#chrono_FaltasLbl",	700,	100,	50,		30	);
-doLayout(layout,"#chrono_TocadosLbl",	700,	135,	50,		30	);
-doLayout(layout,"#chrono_RehusesLbl",	700,	170,	50,		30	);
-doLayout(layout,"#chrono_Faltas",		750,	100,	35,		30	);
-doLayout(layout,"#chrono_Tocados",		750,	135,	35,		30	);
-doLayout(layout,"#chrono_Rehuses",		750,	170,	35,		30	);
+doLayout(layout,"#chrono_FaltasLbl",	700,	100,	50,		25	);
+doLayout(layout,"#chrono_TocadosLbl",	700,	125,	50,		25	);
+doLayout(layout,"#chrono_RehusesLbl",	700,	150,	50,		25	);
+doLayout(layout,"#chrono_Faltas",		750,	100,	35,		25	);
+doLayout(layout,"#chrono_Tocados",		750,	125,	35,		25	);
+doLayout(layout,"#chrono_Rehuses",		750,	150,	35,		25	);
+// same location for elim, np and puesto
+doLayout(layout,"#chrono_EliminadoLbl",	700,	175,	85,		25	);
+doLayout(layout,"#chrono_NoPresentadoLbl",	700,	175,	85,		25	);
+doLayout(layout,"#chrono_PuestoLbl",	700,	175,	85,		25	);
 
 doLayout(layout,"#chrono_Manual",		600,	30,	    55, 	10	);
 doLayout(layout,"#chrono_Intermedio",	580,	40,	    75, 	10	);
 doLayout(layout,"#chrono_Reconocimiento",455,	160,	215, 	10	);
 doLayout(layout,"#chrono_Error",		560,	170,    115, 	10	);
-doLayout(layout,"#chrono_Tiempo",		10,		100,	665, 	90	);
+doLayout(layout,"#chrono_Tiempo",		5,		100,	665, 	90	);
 
 doLayout(layout,"#chrono_Logo",			10,		215,	80,		55	);
 doLayout(layout,"#chrono_Dorsal",		100,	225,	100,	25	);

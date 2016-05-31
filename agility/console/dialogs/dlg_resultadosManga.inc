@@ -1,7 +1,7 @@
 <!-- 
 dlg_resultadosManga.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -126,7 +126,7 @@ $('#resultadosmanga-datagrid').datagrid({
         { field:'Nombre',		width:15, align:'left',  title: '<?php _e('Name'); ?>',formatter:formatBold},
         { field:'NombreGuia',	width:35, align:'right', title: '<?php _e('Handler'); ?>' },
         { field:'NombreClub',	width:25, align:'right', title: '<?php _e('Club'); ?>' },
-      	{ field:'Categoria',	width:10, align:'center',title: '<?php _e('Cat' ); ?>.'},
+      	{ field:'Categoria',	width:10, align:'center',title: '<?php _e('Cat' ); ?>.',formatter:formatCategoria},
       	{ field:'Faltas',		width:10, align:'center', title: '<?php _e('Faults'); ?>'},
       	{ field:'Rehuses',		width:10, align:'center', title: '<?php _e('Refusals'); ?>'},
       	{ field:'Tocados',		width:10, align:'center', title: '<?php _e('Touchs'); ?>'},

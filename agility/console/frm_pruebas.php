@@ -1,7 +1,7 @@
 <!-- 
 frm_pruebas.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -150,15 +150,15 @@ $config =Config::getInstance();
             	    { field:'Numero',		width:4, sortable:true,		align:'center', title: '#'},
             		{ field:'Nombre',		width:20, sortable:false,   title: '<?php _e('Name'); ?>'+'/'+'<?php _e('Comments'); ?>',formatter:formatBold },
             		{ field:'Fecha',		width:12, sortable:true,	title: '<?php _e('Date'); ?>' },
-            		{ field:'Hora',			width:10, sortable:false,	title: '<?php _e('Time'); ?>' },
+            		{ field:'Hora',			width:10, sortable:false,	title: '<?php _e('Hour'); ?>' },
             		{ field:'PreAgility',	width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'P.A. -1' },
             		{ field:'PreAgility2',	width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'P.A. -2' },
             		{ field:'Grado1',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'G-I    ' },
             		{ field:'Grado2',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'G-II   ' },
             		{ field:'Grado3',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'G-III  ' },
             		{ field:'Open',			width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'Open   ' },
-            		{ field:'Equipos3',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'Eq. 3x4' },
-            		{ field:'Equipos4',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'Eq. 4x4' },
+            		{ field:'Equipos3',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'Eq.Best' },
+            		{ field:'Equipos4',		width:8, sortable:false, formatter:	formatOk,	align:'center', title: 'Eq.Comb' },
             		{ field:'KO',			width:8, sortable:false, formatter:	formatOk,	   align:'center', title: 'K.O.   ' },
             		{ field:'Especial',	    width:8, sortable:false, formatter:	formatOk,	align:'center', title: '<?php _e('Special'); ?>'},
             	    { field:'Observaciones',hidden:true }, // texto para el caso de Manga especial

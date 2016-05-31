@@ -2,7 +2,7 @@
 /*
 print_resultadosByManga.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -43,7 +43,7 @@ class ResultadosByManga extends PrintCommon {
 	
 	// geometria de las celdas
 	protected $cellHeader;
-	protected $pos	=array(  9,		18,		15,		30,		20,		15,		   6,      6,    6,       12,     7,    12,      20,			12 );
+	protected $pos	=array(  8,		17,		15,		30,		20,		15,		   6,      6,    6,       12,     7,    12,      23,			11 );
 	protected $align=array(  'L',    'L',    'C',    'R',   'R',    'C',       'C',   'C',   'C',     'R',    'R',  'R',     'L',			'C');
 
 	
@@ -72,7 +72,7 @@ class ResultadosByManga extends PrintCommon {
 		// Si es la primera hoja pintamos datos tecnicos de la manga
 		if ($this->PageNo()!=1) return;
 
-		$this->SetFont('Helvetica','B',9); // bold 9px
+		$this->SetFont($this->getFontName(),'B',9); // bold 9px
 		$jobj=new Jueces("print_resultadosByManga");
 		$juez1=$jobj->selectByID($this->manga->Juez1);
 		$juez2=$jobj->selectByID($this->manga->Juez2);
@@ -107,7 +107,7 @@ class ResultadosByManga extends PrintCommon {
 		$this->ac_SetFillColor($this->config->getEnv('pdf_hdrbg1')); // azul
 		$this->ac_SetTextColor($this->config->getEnv('pdf_hdrfg1')); // blanco
 		$this->ac_SetDrawColor("0x000000"); // line color
-		$this->SetFont('Helvetica','B',8); // bold 9px
+		$this->SetFont($this->getFontName(),'B',8); // bold 9px
 		for($i=0;$i<count($this->cellHeader);$i++) {
 			// en la cabecera texto siempre centrado
 			if ($this->pos[$i]!=0) $this->Cell($this->pos[$i],7,$this->cellHeader[$i],1,0,'C',true);
@@ -144,17 +144,17 @@ class ResultadosByManga extends PrintCommon {
 			}
 			// properly format special fields
 
-			$puesto= ($row['Penalizacion']>=200)? "-":"{$row['Puesto']}º";
+			$puesto= ($row['Penalizacion']>=200)? "-":"{$row['Puesto']}";
 			$veloc= ($row['Penalizacion']>=200)?"-":number_format($row['Velocidad'],1);
 			$tiempo= ($row['Penalizacion']>=200)?"-":number_format($row['Tiempo'],$this->timeResolution);
 			$penal=number_format($row['Penalizacion'],$this->timeResolution);
 			$this->ac_row($rowcount,8);
 			// print row data
-			$this->SetFont('Helvetica','',8); // set data font size
+			$this->SetFont($this->getFontName(),'',8); // set data font size
 			$this->Cell($this->pos[0],6,$row['Dorsal'],			'LR',	0,		$this->align[0],	true);
-			$this->SetFont('Helvetica','B',8); // mark Nombre as bold
+			$this->SetFont($this->getFontName(),'B',8); // mark Nombre as bold
 			$this->Cell($this->pos[1],6,$row['Nombre'],			'LR',	0,		$this->align[1],	true);
-			$this->SetFont('Helvetica','',8); // set data font size
+			$this->SetFont($this->getFontName(),'',8); // set data font size
 			if ($this->pos[2]!=0) $this->Cell($this->pos[2],6,$row['Licencia'],		'LR',	0,		$this->align[2],	true);
 			$this->Cell($this->pos[3],6,$row['NombreGuia'],		'LR',	0,		$this->align[3],	true);
 			$this->Cell($this->pos[4],6,$row['NombreClub'],		'LR',	0,		$this->align[4],	true);
@@ -172,7 +172,7 @@ class ResultadosByManga extends PrintCommon {
 			$this->Cell($this->pos[10],6,$veloc,				'LR',	0,		$this->align[10],	true);
 			$this->Cell($this->pos[11],6,$penal,				'LR',	0,		$this->align[11],	true);
 			$this->Cell($this->pos[12],6,$row['Calificacion'],	'LR',	0,		$this->align[12],	true);
-			$this->SetFont('Helvetica','B',11); // bold 11px
+			$this->SetFont($this->getFontName(),'B',11); // bold 11px
 			$this->Cell($this->pos[13],6,$puesto,			'LR',	0,		$this->align[13],	true);
 			$this->Ln();
 			$rowcount++;

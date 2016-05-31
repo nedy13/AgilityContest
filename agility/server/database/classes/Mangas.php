@@ -2,7 +2,7 @@
 /*
 Mangas.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -24,7 +24,7 @@ class Mangas extends DBObject {
 	
 	/* copia de la estructura de la base de datos, para ahorrar consultas */
 	public static $tipo_manga= array(
-		0 =>	array ( 0,'Nombre largo',		'Grado corto',	'Nombre corto',	'Grado largo'),
+		0 =>	array ( 0,'Nombre Manga largo',	'Grado corto',	'Nombre manga',	'Grado largo'),
 		1 =>	array( 1, 'Pre-Agility Manga 1', 		'P.A.',	'PreAgility 1',	'Pre-Agility'),
 		2 => 	array( 2, 'Pre-Agility Manga 2', 		'P.A.',	'PreAgility 2',	'Pre-Agility'),
 		3 =>	array( 3, 'Agility Grado I Manga 1',	'GI',	'Agility-1 GI',	'Grado I'),
@@ -32,13 +32,13 @@ class Mangas extends DBObject {
 		5 =>	array( 5, 'Agility Grado II', 			'GII',	'Agility GII',	'Grado II'),
 		6 =>	array( 6, 'Agility Grado III', 			'GIII',	'Agility GIII',	'Grado III'),
 		7 =>	array( 7, 'Agility', 	        		'-',	'Agility',		'Abierta'),
-		8 =>	array( 8, 'Agility Equipos (3 mejores)','-',	'Agility Eq3.',	'Equipos'),
-		9 =>	array( 9, 'Agility Equipos (4 Conjunta)','-',	'Agility Eq4.',	'Equipos'),
+		8 =>	array( 8, 'Agility Equipos',			'-',	'Agility Eq.',	'Equipos'), // team best
+		9 =>	array( 9, 'Agility Equipos'				,'-',	'Agility Eq.',	'Equipos'), // team combined
 		10 =>	array( 10,'Jumping Grado II',			'GII',	'Jumping GII',	'Grado II'),
 		11 =>	array( 11,'Jumping Grado III',			'GIII',	'Jumping GIII',	'Grado III'),
 		12 =>	array( 12,'Jumping',    				'-',	'Jumping',		'Abierta'),
-		13 =>	array( 13,'Jumping Equipos (3 mejores)','-',    'Jumping Eq.',	'Equipos'),
-		14 =>	array( 14,'Jumping Equipos (4 Conjunta)','-',   'Jumping Eq.',	'Equipos'),
+		13 =>	array( 13,'Jumping Equipos'				,'-',   'Jumping Eq.',	'Equipos'), // team best
+		14 =>	array( 14,'Jumping Equipos'				,'-',  	'Jumping Eq.',	'Equipos'), // team combined
 		15 =>	array( 15,'Ronda K.O.', 				'-',	'Ronda K.O.',	'K.O.'),
 		16 =>	array( 16,'Manga especial', 			'-',	'Manga Especial','Abierta')	
 	);
@@ -96,7 +96,7 @@ class Mangas extends DBObject {
 	
 	/**
 	 * inserta una manga en la jornada
-	 * @param {integer} $tipo ID del tipo manga (tabla 'Tipo_Manga')
+	 * @param {integer} $tipo ID del tipo manga (tabla 'Mangas::Tipo_Manga')
 	 * @param {string} $grado valor asociado al grado de la manga de la ID dada
 	 * @return {string} empty on success, else error 
 	 */
@@ -139,7 +139,7 @@ class Mangas extends DBObject {
 				$str="UPDATE Mangas
 				SET Recorrido=0,
 				TRS_L_Tipo=1, TRS_M_Tipo=1, TRS_S_Tipo=1, TRS_T_Tipo=1,
-				TRS_L_Factor=10, TRS_M_Factor=10, TRS_S_Factor=10, TRS_T_Factor=10,
+				TRS_L_Factor=0, TRS_M_Factor=0, TRS_S_Factor=0, TRS_T_Factor=0,
 				TRS_L_Unit='%', TRS_M_Unit='%', TRS_S_Unit='%', TRS_T_Unit='%'
 				WHERE ( Jornada=$j ) AND  ( Tipo=$tipo ) AND ( Grado='$grado' )";
 				$rs=$this->query($str);
@@ -193,16 +193,15 @@ class Mangas extends DBObject {
 		$trm_s_tipo = http_request("TRM_S_Tipo","i",0);
 		$trm_t_tipo = http_request("TRM_T_Tipo","i",0);
 		// factor TRS
-		// if TRS is provided as mts/secs , multiply *10 to store as an integer
-		$trs_l_factor = intval( ( ($trs_l_tipo!=6)?1:10) * http_request("TRS_L_Factor","f",0.0) );
-		$trs_m_factor = intval( ( ($trs_m_tipo!=6)?1:10) * http_request("TRS_M_Factor","f",0.0) );
-		$trs_s_factor = intval( ( ($trs_s_tipo!=6)?1:10) * http_request("TRS_S_Factor","f",0.0) );
-		$trs_t_factor = intval( ( ($trs_t_tipo!=6)?1:10) * http_request("TRS_T_Factor","f",0.0) );
+		$trs_l_factor = http_request("TRS_L_Factor","f",0.0);
+		$trs_m_factor = http_request("TRS_M_Factor","f",0.0);
+		$trs_s_factor = http_request("TRS_S_Factor","f",0.0);
+		$trs_t_factor = http_request("TRS_T_Factor","f",0.0);
 		// factor TRM
-		$trm_l_factor = http_request("TRM_L_Factor","i",0);
-		$trm_m_factor = http_request("TRM_M_Factor","i",0);
-		$trm_s_factor = http_request("TRM_S_Factor","i",0);
-		$trm_t_factor = http_request("TRM_T_Factor","i",0);
+		$trm_l_factor = http_request("TRM_L_Factor","f",0.0);
+		$trm_m_factor = http_request("TRM_M_Factor","f",0.0);
+		$trm_s_factor = http_request("TRM_S_Factor","f",0.0);
+		$trm_t_factor = http_request("TRM_T_Factor","f",0.0);
 		// Unidad TRS
 		$trs_l_unit = http_request("TRS_L_Unit","s","s",false);
 		$trs_m_unit = http_request("TRS_M_Unit","s","s",false);
@@ -233,7 +232,7 @@ class Mangas extends DBObject {
 		$stmt=$this->conn->prepare($sql);
 		if (!$stmt) return $this->error($this->conn->error); 
 		$res=$stmt->bind_param(
-			'iiiiiiiiiiisiisiisiisiisiisiisiisiis',
+			'iiiiiiiiiidsidsidsidsidsidsidsidsiis',
 			$recorrido,
 			$dist_l,	$obst_l,	$dist_m,	$obst_m,	$dist_s,	$obst_s, 	$dist_t,	$obst_t,// distancias y obstaculos
 			$trs_l_tipo,	$trs_l_factor,	$trs_l_unit,	$trm_l_tipo,	$trm_l_factor,	$trm_l_unit,// TRS y TRM Large
@@ -321,12 +320,16 @@ class Mangas extends DBObject {
 	function selectByJornada() {
 		$this->myLogger->enter();
 		$result=$this->__select(
-			/* SELECT */"Mangas.ID AS ID, Mangas.Tipo AS Tipo, Mangas.Recorrido AS Recorrido,Tipo_Manga.Grado AS Grado, Tipo_Manga.Descripcion AS Descripcion",
-			/* FROM */ "Mangas,Tipo_Manga",
-			/* WHERE */ "( ( Jornada = {$this->jornada} ) AND ( Mangas.Tipo = Tipo_Manga.ID ) )",
-			/* ORDER */ "Descripcion ASC",
+			/* SELECT */"ID,Tipo,Recorrido,Grado",
+			/* FROM */ "Mangas",
+			/* WHERE */ "(Jornada = {$this->jornada} )",
+			/* ORDER */ "Tipo ASC",
 			/* LIMIT */ ""
 		);
+		foreach ( $result['rows'] as &$item) {
+			// merge information on Mangas::Tipo_Manga without using database Tipo_Manga table (to allow i18n)
+			$item['Descripcion']=Mangas::$tipo_manga[$item['Tipo']][1];
+		}
 		$this->myLogger->leave();
 		return $result;
 	}
@@ -362,7 +365,41 @@ class Mangas extends DBObject {
 		$this->myLogger->leave();
 		return $hermanas;
 	}
-	
+
+	/**
+	 * Intercambia los tipos de las mangas
+	 * @param $id ID De manga origen
+	 */
+	function swapMangas($id) {
+		$this->myLogger->enter();
+		if ($id<=0) return $this->error("Invalid Manga ID");
+		// second query to retrieve $rows starting at $offset
+		$manga1=$this->__getObject("Mangas",$id);
+		if (!is_object($manga1)) return $this->error("Cannot locate Manga with ID=$id");
+		$tipo1=$manga1->Tipo;
+		$tipo2=Mangas::$manga_hermana[$tipo1];
+		if ($tipo2==0) {
+			$this->myLogger->info("La manga:$id de tipo:$tipo1 no tiene hermana asociada");
+			return array($manga1,null);
+		}
+		// Obtenemos __Todas__ las mangas de esta jornada que tienen el tipo buscado ninguna, una o hasta 8(k.O.)
+		$result2=$this->__select("*","Mangas","( Jornada={$this->jornada} ) AND ( Tipo=$tipo2)","","");
+		if (!is_array($result2)) {
+			// inconsistency error muy serio
+			return $this->error("Falta la manga hermana de tipo:$tipo2 para manga:$id de tipo:$tipo1");
+		}
+		if (count($result2['rows'])!=1) {
+			// no sense swap in single or multi-round series
+			return $this->error("Tiene que haber una y solo una hermana de tipo:$tipo2 para la manga:$id de tipo:$tipo1");
+		}
+		$manga2=$result2['rows'][0];
+		$str1="UPDATE Mangas SET Tipo=$tipo2 WHERE ID=$id";
+		$str2="UPDATE Mangas SET Tipo=$tipo1 WHERE ID={$manga2['ID']}";
+		$this->query($str1);
+		$this->query($str2);
+		return "";
+	}
+
 	/**
 	 * creacion / borrado de mangas asociadas a una jornada
 	 * @param {integer} $id ID de jornada

@@ -17,15 +17,32 @@ class UCA extends Federations {
             'International' => 0,
             'WideLicense' => false, // some federations need extra print space to show license ID
             'Recorridos' => array('Common course',"60 + 50 / 40 + 30","Separate courses"),
+            'ListaGradosShort' => array(
+                '-' => 'Sin especificar',
+                'Baja' => 'Baja',
+                'GI' => 'G1',
+                'GII'=> 'G2',
+                'GIII' => 'G3', // invalid in UCA federation
+                'P.A.' => 'G0',
+                'P.B.' => 'P.B.', // "perro en blanco"
+                'Ret.' => 'Ret.'
+            ),
             'ListaGrados'    => array (
                 '-' => ' ',
                 'Baja' => 'Baja temporal',
-                'GI' => 'Grado I',
-                'GII'=> 'Grado II',
-                'GIII' => 'Grado III', // no existe
+                'GI' => 'Grado 1',
+                'GII'=> 'Grado 2',
+                // 'GIII' => 'Grado 3', // no existe
                 'P.A.' => 'Grado 0',
                 'P.B.' => 'Perro en Blanco',
                 'Ret.' => 'Retirado',
+            ),
+            'ListaCategoriasShort' => array (
+                '-' => '-',
+                'L' => '60',
+                'M' => '50',
+                'S' => '40',
+                'T' => '30'
             ),
             'ListaCategorias' => array (
                 '-' => 'Sin especificar',
@@ -58,7 +75,8 @@ class UCA extends Federations {
                 "ST"=>"Cat. 40+30",
                 "MS"=>"Cat. 50+40", // invalid
                 "LMS" => 'Conjunta 6+5+4', // invalid
-                "LMST",'Conjunta 6+5+4+3'
+                "LMST" =>'Conjunta 6+5+4+3',
+                "-LMST"=> ''
             )
         );
     }
@@ -67,7 +85,7 @@ class UCA extends Federations {
      * Evalua la calificacion parcial del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $m datos de la manga
+     * @param {object} $m datos de la manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
@@ -75,6 +93,11 @@ class UCA extends Federations {
         if ($perro['Grado']!=="GII") { // solo se puntua en grado II
             parent::evalPartialCalification($p,$j,$m,$perro,$puestocat);
             return;
+        }
+        if ($perro['Penalizacion']>=400)  { // tiene manga pendiente de salir
+            $perro['Penalizacion']=400.0;
+            $perro['Calificacion'] = "";
+            $perro['CShort'] = "";
         }
         if ($perro['Penalizacion']>=200)  { // no presentado: no puntua
             $perro['Penalizacion']=200.0;
@@ -112,12 +135,14 @@ class UCA extends Federations {
      * Evalua la calificacion final del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $c1 datos de la primera manga
-     * @param {array} $c2 datos de la segunda manga
+     * @param {object} $m1 datos de la primera manga
+     * @param {object} $m2 datos de la segunda manga
+     * @param {array} $c1 resultados de la primera manga
+     * @param {array} $c2 resultados de la segunda manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
-    public function evalFinalCalification($p,$j,$c1,$c2,&$perro,$puestocat){
+    public function evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,&$perro,$puestocat){
         $grad=$perro['Grado']; // cogemos el grado
         $cat=$perro['Categoria']; // cogemos la categoria
         if ($grad!=="GII") { // solo se puntua en grado II
@@ -133,6 +158,7 @@ class UCA extends Federations {
         if ($perro['P1']<16) $pt1=3;
         if ($perro['P1']<6) $pt1=4;
         if ($perro['P1']==0) $pt1=5;
+        $perro['C1']=($pt1==0)?" ":strval($pt1);
         // manga 2
         $pt2=0;
         if ($c2!=null) {
@@ -142,13 +168,13 @@ class UCA extends Federations {
             if ($perro['P2']<6) $pt2=4;
             if ($perro['P2']==0) $pt2=5;
         }
+        $perro['C2']=($pt2==0)?" ":strval($pt2);
         // final
-        $str=$str=strval($pt1)."-".strval($pt2)."-";
         // solo puntuan en la global los siete primeros con dobles excelentes
-        if (($pt1<4) || ($pt2<4) || ($puestocat[$cat]>7) ) {
-            $perro['Calificacion']=$str;
+        if (($pt1<4) || ($pt2<4) || ($puestocat[$cat]>7) || ($puestocat[$cat]<=0) ) {
+            $perro['Calificacion']="";
         } else {
-            $perro['Calificacion']= $str . $pts[ $puestocat[$cat]-1 ];
+            $perro['Calificacion']= $pts[ $puestocat[$cat]-1 ];
         }
     }
 }

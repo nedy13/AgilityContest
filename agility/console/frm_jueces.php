@@ -1,7 +1,7 @@
 <!-- 
 frm_jueces.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -22,7 +22,7 @@ $config =Config::getInstance();
 ?>
 
 <!-- TABLA DE jquery-easyui para listar y editar la BBDD DE JUECES -->
-<div  style="width:975px;height:550px">   
+<div  style="width:100%;height:550px">
     <!-- DECLARACION DE LA TABLA DE JUECES -->
     <table id="jueces-datagrid">  </table>
 </div> 

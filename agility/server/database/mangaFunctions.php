@@ -3,7 +3,7 @@
 /*
 mangaFunctions.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -38,6 +38,7 @@ try {
 		case "sharejuez": $am->access(PERMS_OPERATOR); $result=$mangas->shareJuez(); break;
 		// no direct delete as created/destroyed from jornadaFunctions
 		case "enumerate": 	$result=$mangas->selectByJornada(); break;
+		case "swap": 	$result=$mangas->swapMangas($manga); break;
 		case "getbyid":		$result=$mangas->selectByID($manga); break;
 		default: throw new Exception("mangaFunctions:: invalid operation: $operation provided");
 	}

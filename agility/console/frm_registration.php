@@ -1,7 +1,7 @@
 <!-- 
 frm_about.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -72,7 +72,7 @@ $config =Config::getInstance();
 		<a id="registration-okButton" href="#" class="easyui-linkbutton"
    			data-options="iconCls:'icon-key'"
    			onclick="send_regFile()"><?php _e('Register'); ?></a>
-		<input type="file" name="fichero" required="required" onchange="read_regFile(this)"/><br/>
+		<input type="file" name="fichero" required="required" accept=".info" onchange="read_regFile(this)"/><br/>
 		<input id="registrationData" type="hidden" name="Data" value="">
 		</span> 
 		<span style="float:right">

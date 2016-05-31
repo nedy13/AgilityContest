@@ -23,7 +23,7 @@ BUILD_DIR=/home/jantonio/work/agility/build
 EXTRA_DIR=/home/jantonio/work/agility/extra-pkgs
 CONF_DIR=${BASE_DIR}/extras
 NSIS=${BASE_DIR}/build/AgilityContest.nsi
-XAMPP=xampp-portable-win32-5.6.12-0-VC11.zip
+XAMPP=xampp-portable-win32-5.6.20-0-VC11.zip
 DROPBOX=${HOME}/Dropbox/Public/AgilityContest
 
 # make sure that build dir exists and is clean
@@ -33,7 +33,7 @@ rm -rf ${BUILD_DIR}/*
 #retrieve xampp from server if not exists
 if [ ! -f ${EXTRA_DIR}/${XAMPP} ]; then
     echo "Download xampp from server ..."
-    (cd ${EXTRA_DIR}; wget http://sourceforge.net/projects/xampp/files/XAMPP%20Windows/5.6.12/xampp-portable-win32-5.6.12-0-VC11.zip )
+    (cd ${EXTRA_DIR}; wget http://sourceforge.net/projects/xampp/files/XAMPP%20Windows/5.6.20/xampp-portable-win32-5.6.20-0-VC11.zip )
     if [ $? -ne 0 ]; then
         echo "Cannot download xampp. Aborting"
         exit 1
@@ -67,14 +67,10 @@ cp ${BUILD_DIR}/xampp/php/php.ini  ${BUILD_DIR}/xampp/php/php.ini.orig
 sed -i "s/;extension=php_openssl.dll/extension=php_openssl.dll/g" ${BUILD_DIR}/xampp/php/php.ini
 
 # fix options for mysql
+# notice that in 5.6.20 cannot simply add options at the end, so must provide our own
+# personalized copy of my.ini
 echo "Setting up mysql/my.ini ..."
-cp ${BUILD_DIR}/xampp/mysql/my-default.ini  ${BUILD_DIR}/xampp/mysql/my.ini
-# default my.ini is empty and only has section [mysqld]. So it's safe to append at eof
-cat <<__EOF >>${BUILD_DIR}/xampp/mysql/my.ini
-lower_case_table_names = 1
-key_buffer_size = 16M
-explicit_defaults_for_timestamp = 1
-__EOF
+cp ${BASE_DIR}/build/ac_my.ini  ${BUILD_DIR}/xampp/mysql/my.ini
 unix2dos ${BUILD_DIR}/xampp/mysql/my.ini
 
 # ok. time to add AgilityContest files
@@ -91,9 +87,10 @@ unix2dos ${BUILD_DIR}/settings_de.bat
 mkdir -p ${BUILD_DIR}/docs
 if [ -d ${DROPBOX} ]; then
     echo "Adding a bit of documentation ..."
-    cp ${DROPBOX}/{AgilityContest_despliegue.pdf,ReferenciasPegatinas.txt,AgilityContest-1000x800.png,Tarifas_2015.pdf,AgilityContest_doc.zip} ${BUILD_DIR}/docs
+    for i in AgilityContest_despliegue.pdf ReferenciasPegatinas.txt AgilityContest-1000x800.png Tarifas_2016.pdf ac_obs_livestreaming.pdf; do
+    cp ${DROPBOX}/${i} ${BUILD_DIR}/docs
+    done
     cp ${BASE_DIR}/README* ${BUILD_DIR}/docs
-    (cd ${BUILD_DIR}/docs; unzip AgilityContest_doc.zip)
 fi
 
 # and finally invoke makensis

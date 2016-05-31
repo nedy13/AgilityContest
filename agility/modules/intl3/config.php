@@ -17,29 +17,46 @@ class INTL3 extends Federations {
             'International' => 1,
             'WideLicense' => false, // some federations need extra print space to show license ID
             'Recorridos' => array('Common course',"Standard / Midi + Mini","Separate courses"),
+            'ListaGradosShort' => array(
+                '-' => 'Sin especificar',
+                'Baja' => 'Out',
+                'GI' => 'A1',
+                'GII'=> 'A2',
+                'GIII' => 'A3',
+                'P.A.' => 'A0',
+                'P.B.' => 'T.d.', // "Test dog"
+                'Ret.' => 'Ret.'
+            ),
             'ListaGrados'    => array (
-                '-' => ' ',
-                'Baja' => 'Temporary out',
+                '-' => 'Not specified',
                 'GI' => 'Grade I',
                 'GII'=> 'Grade II',
-                'GIII' => 'Grade III', // no existe
+                'GIII' => 'Grade III',
                 'P.A.' => 'Pre-Agility',
-                'P.B.' => 'Trial dog',
+                'P.B.' => 'Test dog',
+                'Baja' => 'Temporary out',
                 'Ret.' => 'Retired',
+            ),
+            'ListaCategoriasShort' => array (
+                '-' => '-',
+                'L' => 'Large',
+                'M' => 'Medium',
+                'S' => 'Small',
+                // 'T' => 'Tiny'
             ),
             'ListaCategorias' => array (
                 '-' => 'Sin especificar',
                 'L' => 'Standard',
                 'M' => 'Medium',
                 'S' => 'Small',
-                'T' => 'Tiny' // not used
+                // 'T' => 'Tiny'
             ),
             'InfoManga' => array(
                 array('L' => _('Large'),         'M' => _('Medium'),         'S' => _('Small'), 'T' => ''), // separate courses
                 array('L' => _('Large'),         'M' => _('Medium+Small'),   'S' => '',         'T' => ''), // mixed courses
                 array('L' => _('Common course'), 'M' => '',                  'S' => '',         'T' => '') // common
             ),
-            'Modes' => array(array(/* separado */ 0, 1, 2, -1), array(/* mixto */ 0, 3, 3. -1), array(/* conjunto */ 4, 4, 4, -1 )),
+            'Modes' => array(array(/* separado */ 0, 1, 2, -1), array(/* mixto */ 0, 3, 3, -1), array(/* conjunto */ 4, 4, 4, -1 )),
             'ModeStrings' => array( // text to be shown on each category
                 array(/* separado */ "Large", "Medium", "Small", "Invalid"),
                 array(/* mixto */ "Large", "Medium+Small", "Medium+Small", "Invalid"),
@@ -58,7 +75,8 @@ class INTL3 extends Federations {
                 "ST"=>"Small/Tiny", // invalid
                 "MS"=>"Medium/Small",
                 "LMS" => 'Common LMS',
-                "LMST",'Common LMST' // invalid
+                "LMST" => 'Common LMST',
+                "-LMST" => ''
             )
         );
     }
@@ -67,7 +85,7 @@ class INTL3 extends Federations {
      * Evalua la calificacion parcial del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $m datos de la manga
+     * @param {object} $m datos de la manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
@@ -79,13 +97,15 @@ class INTL3 extends Federations {
      * Evalua la calificacion final del perro
      * @param {object} $p datos de la prueba
      * @param {object} $j datos de la jornada
-     * @param {array} $c1 datos de la primera manga
-     * @param {array} $c2 datos de la segunda manga
+     * @param {object} $m1 datos de la primera manga
+     * @param {object} $m22 datos de la segunda manga
+     * @param {array} $c1 resultados de la primera manga
+     * @param {array} $c2 resultados de la segunda manga
      * @param {array} $perro datos de puntuacion del perro. Passed by reference
      * @param {array} $puestocat puesto en funcion de la categoria
      */
-    public function evalFinalCalification($p,$j,$c1,$c2,&$perro,$puestocat){
-        parent::evalFinalCalification($p,$j,$c1,$c2,$perro,$puestocat);
+    public function evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,&$perro,$puestocat){
+        parent::evalFinalCalification($p,$j,$m1,$m2,$c1,$c2,$perro,$puestocat);
     }
 }
 ?>

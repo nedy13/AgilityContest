@@ -7,7 +7,7 @@
 
 
 	var running = false;
-	var pause = false;
+	var paused = false;
 	var startTime = 0;
     var localTime = 0; // to avoid time offset problems
 	var stopTime = 0;
@@ -42,7 +42,7 @@
 		onBeforeResync	: function(){ return true; },
 		onBeforePause	: function(){ return true; },
 		onBeforeResume	: function(){ return true; },
-		onUpdate		: function(tstamp,running,pause){ return true; }, // action to do on display new timestamp
+		onUpdate		: function(tstamp,running,paused){ return true; }, // action to do on display new timestamp
 
         triggerEvents   : false,    // on true triggerEvents
 		target			: "*", 		//selectors for the events target
@@ -63,7 +63,10 @@
 				localTime=Date.now();
 				if(typeof timestamp === 'undefined') startTime=localTime;
 				else startTime=timestamp;
+				stopTime=startTime;
+				pauseTime=startTime;
 				running = true;
+				paused = false;
 				run_chrono();
 			}
 			if (config.triggerEvents) $(config.target).trigger('chronostart');
@@ -78,6 +81,7 @@
 				if(typeof timestamp === 'undefined') stopTime=Date.now();
 				else stopTime=timestamp;
 				running = false;
+				paused = false;
 			}
             if (config.triggerEvents) $(config.target).trigger('chronostop');
 		},
@@ -91,7 +95,7 @@
 				if(typeof timestamp === 'undefined') pauseTime=Date.now();
 				else pauseTime=timestamp;
 				running = false;
-				pause = true;
+				paused = true;
 			}
             if (config.triggerEvents) $(config.target).trigger('chronopause');
 		},
@@ -103,7 +107,7 @@
 				$(config.resume).attr('disabled',true);
 				$(config.pause).attr('disabled',false);
 				running = true;
-				pause = false;
+				paused = false;
 				run_chrono();
 			}
             if (config.triggerEvents) $(config.target).trigger('chronoresume');
@@ -128,7 +132,12 @@
             if (config.triggerEvents) $(config.target).trigger('chronoreset');
 		},
 		started : function() {
-			return ( running || pause );
+			return ( running || paused );
+		},
+		getValue : function() {
+			if (paused) return pauseTime-startTime; // paused: show intermediate time
+			if (!running) return stopTime-startTime; // stopped: show last stored time mark
+			return Date.now()-localTime; // running. may be not accurate
 		}
 	};
 
@@ -139,7 +148,7 @@
         if (localTime==0) localTime=now;
 		if (stopTime==0) stopTime=now;
 		if (pauseTime==0) pauseTime=now;
-		if (pause) {
+		if (paused) {
 			elapsed		= pauseTime-startTime; // use localTime to evaluate time lapse
 			config.mseconds	= elapsed % 1000;
 			config.seconds	= Math.floor(elapsed / 1000);
@@ -149,7 +158,6 @@
 			config.minutes	= config.minutes % 60;
 			config.days		= Math.floor(config.hours / 24);
 			config.hours    = config.hours % 24;
-			view_chrono(elapsed);
 		} else if (running ) {
 			elapsed		= now-localTime; // use localTime to evaluate time lapse
 			config.mseconds	= elapsed % 1000;
@@ -160,8 +168,7 @@
 			config.minutes	= config.minutes % 60;
 			config.days		= Math.floor(config.hours / 24);
 			config.hours    = config.hours % 24;
-			if (!pause) setTimeout(run_chrono,config.interval);
-			view_chrono(elapsed);
+			setTimeout(run_chrono,config.interval);
 		} else { // chrono stopped; show data at least once
 			elapsed		= stopTime-startTime; // use real startTime instead of localTime
 			config.mseconds	= elapsed % 1000;
@@ -172,13 +179,13 @@
 			config.minutes	= config.minutes % 60;
 			config.days		= Math.floor(config.hours / 24);
 			config.hours    = config.hours % 24;
-			view_chrono(elapsed);
 		}
+		view_chrono(elapsed);
 	}
 	
 	function view_chrono(elapsed){
 		if (elapsed<0) elapsed=0; // to avoid bogus data in screen
-		if (! config.onUpdate(elapsed,running,pause)) return;
+		if (! config.onUpdate(elapsed,running,paused)) return;
 		var digits=config.showMode;
 		var extra="";
 		if (running && config.showMode>0) {
@@ -204,8 +211,8 @@
 			$(config.hours_sel).data('hours',0);
 			$(config.minutes_sel).html("");
 			$(config.minutes_sel).data('minutes',0);
-			$(config.seconds_sel).html(""+parseFloat(elapsed/1000).toFixed(digits)+extra);
-			$(config.seconds_sel).data('seconds', parseFloat(elapsed/1000) );
+			$(config.seconds_sel).html(""+toFixedT(parseFloat(elapsed/1000.0),digits)+extra);
+			$(config.seconds_sel).data('seconds', parseFloat(elapsed/1000.0) );
 			$(config.mseconds_sel).html("");
 			$(config.mseconds_sel).data('mseconds',0);			
 		}

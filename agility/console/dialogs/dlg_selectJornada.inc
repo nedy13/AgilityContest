@@ -1,7 +1,7 @@
 <!-- 
 dlg_selectJornada.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -128,8 +128,8 @@ $('#seljornada-Jornada').combogrid({
 		{ field:'Grado2',		width:8, sortable:false,	align:'center', title: 'G-II   ' },
 		{ field:'Grado3',		width:8, sortable:false,	align:'center', title: 'G-III  ' },
 		{ field:'Open',		    width:8, sortable:false,	align:'center', title: 'Open   ' },
-		{ field:'Equipos3',		width:8, sortable:false,	align:'center', title: 'Eq.3x4 ' },
-		{ field:'Equipos4',		width:8, sortable:false,	align:'center', title: 'Eq.Conj' },
+		{ field:'Equipos3',		width:8, sortable:false,	align:'center', title: 'Eq.Best' },
+		{ field:'Equipos4',		width:8, sortable:false,	align:'center', title: 'Eq.Comb' },
 		{ field:'PreAgility',	width:8, sortable:false,	align:'center', title: 'Pre. 1 ' },
 		{ field:'PreAgility2',	width:8, sortable:false,	align:'center', title: 'Pre. 2 ' },
 		{ field:'KO',			width:8, sortable:false,	align:'center', title: 'K.O.   ' },

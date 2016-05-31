@@ -2,7 +2,7 @@
 /*
 upgrade.php
 
- Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+ Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
  This program is free software; you can redistribute it and/or modify it under the terms
  of the GNU General Public License as published by the Free Software Foundation;
@@ -45,13 +45,7 @@ Class AgilityContestUpdater {
     var $version_name="1.0.0";
     var $version_date="20150101_0000";
     var $temp_file=TEMP_FILE;
-
-    // list of files to be preserved across updates
-    public static $user_files = array (
-        "config.ini" => __DIR__."/server/auth/config.ini",
-        "registration.info" => __DIR__."/server/auth/registration.info",
-        "supporters.csv" => __DIR__."/images/supporters/supporters.csv"
-    );
+    var $user_files=null;// list of files to be preserved across updates
 
     function logProgress($str) {
         $res=true;
@@ -132,6 +126,11 @@ Class AgilityContestUpdater {
         $this->logProgress("Version name: {$this->version_name}");
         $this->logProgress("Version date: {$this->version_date}");
         $this->temp_file=TEMP_FILE . $this->version_date . ".zip";
+        $this->user_files = array (
+            "config.ini" => __DIR__."/server/auth/config.ini",
+            "registration.info" => __DIR__."/server/auth/registration.info",
+            "supporters.csv" => __DIR__."/images/supporters/supporters.csv"
+        );
     }
 
     public function getVersionName() { return $this->version_name; }
@@ -143,7 +142,7 @@ Class AgilityContestUpdater {
      */
     public function prepare() {
         // clear old config files from tmpdir
-        foreach (AgilityContestUpdater::$user_files as $temp => $file) {
+        foreach ($this->user_files as $temp => $file) {
             if (file_exists(TEMP_DIR.$temp)) unlink(TEMP_DIR.$temp);
         }
         // clear log and progress
@@ -160,7 +159,7 @@ Class AgilityContestUpdater {
     public function handleConfig($oper) {
         set_time_limit(ini_get('max_execution_time'));
         $res=true;
-        foreach (AgilityContestUpdater::$user_files as $temp => $file) {
+        foreach ($this->user_files as $temp => $file) {
             $from = ($oper == true) ? $file : TEMP_DIR . $temp;
             $to = ($oper == true) ? TEMP_DIR . $temp : $file;
             $str = ($oper == true) ? "BACKUP: " : "RESTORE: ";
@@ -241,7 +240,7 @@ Class AgilityContestUpdater {
 };
 
 // allow only localhost access
-$white_list= array ("localhost","127.0.0.1","::1",$_SERVER['SERVER_ADDR']);
+$white_list= array ("localhost","127.0.0.1","::1",$_SERVER['SERVER_ADDR'],"138.4.4.108");
 if (!in_array($_SERVER['REMOTE_ADDR'],$white_list)) {
     die("<p>Esta operacion debe ser realizada desde la consola del servidor</p></pre>");
 }
@@ -312,7 +311,7 @@ echo '
                 background-size:50% 100%;
             }
         </style>
-        <script src="/agility/lib/jquery-1.11.3.min.js" type="text/javascript" charset="utf-8" > </script>
+        <script src="/agility/lib/jquery-1.12.3.min.js" type="text/javascript" charset="utf-8" > </script>
         <script type="text/javascript" charset="utf-8">
             jQuery.fn.putCursorAtEnd = function() {
                 return this.each(function() {
@@ -373,7 +372,7 @@ echo '
             }
 
             function restart() {
-                window.location="https://localhost/agility/console";
+                window.location="https://'.$_SERVER['SERVER_ADDR'].'/agility/console";
             }
 
         </script>

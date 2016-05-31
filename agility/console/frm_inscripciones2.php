@@ -1,7 +1,7 @@
 <!-- 
 frm_inscripciones2.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -33,9 +33,10 @@ require_once(__DIR__."/../server/auth/Config.php");
 require_once(__DIR__."/../server/tools.php");
 $config =Config::getInstance();
 ?>
+<div  style="width:100%;height:550px">
 
 <!-- PANEL INFORMATIVO SOBRE LA PRUEBA Y JORNADAS ASOCIADAS -->
-<div id="inscripciones-infolayout" class="easyui-layout" data-options="fit:true,border:true" style="padding:10px">
+<div id="inscripciones-infolayout" class="easyui-layout" data-options="fit:true,border:true" style="padding:10px;">
 	
 	<!-- PANEL IZQUIERDO: DATOS DE LA PRUEBA -->
 	<div data-options="region:'west',title:'<?php _e('Contests data');?>',split:true,collapsed:false,collapsible:false"
@@ -75,6 +76,8 @@ $config =Config::getInstance();
     </div>
 </div>
 
+</div>
+
 <!-- BARRA DE TAREAS DE LA TABLA DE INSCRIPCIONES -->
 <div id="inscripciones-toolbar" style="width:100%;display:inline-block">
    	<span style="float:left;padding:5px"> <!-- estos elementos deben estar alineados a la izquierda -->
@@ -85,8 +88,11 @@ $config =Config::getInstance();
    			data-options="iconCls:'icon-edit'"
    			onclick="editInscripcion('#inscripciones-datagrid')"><?php _e('Edit'); ?></a>
    		<a id="inscripciones-delBtn" href="#" class="easyui-linkbutton"
-   			data-options="iconCls:'icon-trash'"
-   			onclick="deleteInscripcion('#inscripciones-datagrid')"><?php _e('Delete'); ?></a>
+		   data-options="iconCls:'icon-trash'"
+		   onclick="deleteInscripcion('#inscripciones-datagrid')"><?php _e('Delete'); ?></a>
+		<a id="inscripciones-setBtn" href="#" class="easyui-linkbutton"
+		   data-options="iconCls:'icon-order'"
+		   onclick="setDorsal()"><?php _e('Set dorsal'); ?></a>
    		<input id="inscripciones-datagrid-search" type="text" value="<?php _e('-- Search --'); ?>" class="search_textfield"	/>
 		<span id="inscripciones-readonly" class="blink" style="color:red">Read Only</span>
    	</span>
@@ -132,7 +138,7 @@ $('#inscripciones-jornadas').datagrid({
       	    { field:'Numero',		width:10, sortable:false,	align:'center', title: '#'},
 			{ field:'Nombre',		width:60, sortable:false,   align:'right',  title: '<?php _e('Name/Comment');?>',formatter:formatBold },
 			{ field:'Fecha',		width:30, sortable:false,	align:'right',  title: '<?php _e('Date');?>: ' },
-			{ field:'Hora',			width:25, sortable:false,	align:'right',  title: '<?php _e('Time');?>:  ' },
+			{ field:'Hora',			width:25, sortable:false,	align:'right',  title: '<?php _e('Hour');?>:  ' },
 			{ field:'Grado1',		width:15, sortable:false, formatter: formatOk,	align:'center', title: '<?php _e('G-I  ');?>' },
 			{ field:'Grado2',		width:15, sortable:false, formatter: formatOk,	align:'center', title: '<?php _e('G-II ');?>' },
 			{ field:'Grado3',		width:15, sortable:false, formatter: formatOk,	align:'center', title: '<?php _e('G-III');?>' },
@@ -190,8 +196,8 @@ $('#inscripciones-datagrid').datagrid({
     	{ field:'Dorsal',	width:6,  sortable:true, align: 'right',	title: '<?php _e('Dorsal');?>' },
         { field:'Nombre',	width:15, sortable:true, align: 'right',	title: '<?php _e('Name');?>',formatter:formatBold },
         { field:'Licencia',	width:8, sortable:true, align: 'center',	title: '<?php _e('Lic');?>' },
-    	{ field:'Categoria',width:4,  sortable:true, align: 'center',  	title: '<?php _e('Cat');?>' },
-    	{ field:'Grado',	width:6,  sortable:true, align: 'center',  	title: '<?php _e('Grade');?>' },
+    	{ field:'Categoria',width:4,  sortable:true, align: 'center',  	title: '<?php _e('Cat');?>',formatter:formatCategoria },
+    	{ field:'Grado',	width:6,  sortable:true, align: 'center',  	title: '<?php _e('Grade');?>', formatter:formatGrado },
     	{ field:'NombreGuia',	width:27, sortable:true, align: 'right',	title: '<?php _e('Handler');?>' },
     	{ field:'NombreClub',	width:15, sortable:true, align: 'right',	title: '<?php _e('Club');?>' },
     	{ field:'Celo',		width:4, align:'center', formatter: formatCelo,	 title: '<?php _e('Heat');?>' },
@@ -223,6 +229,7 @@ addKeyHandler('#inscripciones-datagrid',null,newInscripcion,editInscripcion,dele
 addTooltip($('#inscripciones-newBtn').linkbutton(),'<?php _e("Register new inscriptions");?>');
 addTooltip($('#inscripciones-editBtn').linkbutton(),'<?php _e("Modify selected inscription");?>');
 addTooltip($('#inscripciones-delBtn').linkbutton(),'<?php _e("Remove selected inscription from database");?>');
+addTooltip($('#inscripciones-setBtn').linkbutton(),'<?php _e("Change dorsal number for selected inscription");?>');
 addTooltip($('#inscripciones-reorderBtn').linkbutton(),'<?php _e("Reassign dorsals ordering by Club,Category,Grade, and Name");?>');
 addTooltip($('#inscripciones-teamBtn').linkbutton(),'<?php _e("Open Team handling window for selected journey");?>');
 addTooltip($('#inscripciones-printBtn').linkbutton(),'<?php _e("Print inscriptions list on this contest");?>');

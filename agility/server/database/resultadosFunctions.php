@@ -2,7 +2,7 @@
 /*
 resultadosFunctions.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -30,7 +30,6 @@ try {
 	$JornadaID=http_request("Jornada","i",0);
 	$mangaID=http_request("Manga","i",0);
 	$idperro=http_request("Perro","i",0);
-	$dorsal=http_request("Dorsal","i",0);
 	$mode=http_request("Mode","i",0);
 	if ($operation===null) throw new Exception("Call to resultadosFunction without 'Operation' requested");
 	if ($mangaID==0) throw new Exception("Call to resultadosFunction without 'Manga' provided");
@@ -41,9 +40,21 @@ try {
 		case "update": $am->access(PERMS_ASSISTANT); $result=$resultados->update($idperro); break;
 		case "delete": $am->access(PERMS_OPERATOR); $result=$resultados->delete($idperro); break;
 		case "select": $result=$resultados->select($idperro); break;
-		case "reset": $result=$resultados->reset(); break;
+		case "reset": $am->access(PERMS_OPERATOR); $result=$resultados->reset(); break;
 		case "getPendientes": $result=$resultados->getPendientes($mode); break;
-		case "getResultados": $result=$resultados->getResultados($mode); break;
+		case "getResultados":$result=$resultados->getResultados($mode); break;
+		case "getPuesto":
+			$data=array(
+				'Perro' => $idperro,
+				'Faltas'=> http_request("Faltas","i",0),
+				'Tocados'=> http_request("Tocados","i",0),
+				'Rehuses'=> http_request("Rehuses","i",0),
+				'Eliminado'=> http_request("Eliminado","i",0),
+				'NoPresentado'=> http_request("NoPresentado","i",1),
+				'Tiempo'=> http_request("Tiempo","f",0)
+			);
+			$result=$resultados->getPuesto($mode,$data);
+			break;
 		case "getTRS": $result=$resultados->getTRS($mode); break;
 		case "bestTimes": $result=$resultados->bestTimes($mode); break;
 		default: throw new Exception("resultadosFunctions:: invalid operation: $operation provided");

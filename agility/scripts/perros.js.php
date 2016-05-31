@@ -1,7 +1,7 @@
 /*
  perros.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -261,4 +261,31 @@ function saveDog(){
             }
         }
     });
+}
+
+
+/**
+ * Pregunta al usuario si quiere importar o exportar a excel la lista de perros
+ */
+function perros_importExportDogs() {
+    $.messager.radio(
+        '<?php _e("Import/Export"); ?>',
+        '<?php _e("Import/Export dog data from/to Excel file"); ?>:',
+        {
+            0:'*<?php _e("Create Excel file with current search/sort criteria"); ?>',
+            1:'<?php _e("Update database with imported data from Excel file"); ?>'
+        },
+        function(r){
+            if (!r) return false;
+            switch(parseInt(r)){
+                case 0:
+                    print_listaPerros('excel');
+                    break;
+                case 1:
+                    loadImportPages(); // make sure dialogs and scripts are loaded into page
+                    $('#perros-excel-dialog').dialog('open');
+                    break;
+            }
+        }).window('resize',{width:550});
+    return false; //this is critical to stop the click event which will trigger a normal file download!
 }

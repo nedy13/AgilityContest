@@ -1,7 +1,7 @@
 <!-- 
 frm_paises.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -89,7 +89,7 @@ $config =Config::getInstance();
 				{ field:'Web',			hidden:true},
 				{ field:'Email',		hidden:true},
 				{ field:'Federations',	hidden:true},
-				{ field:'Logo',			width:'20%', sortable:false,    title: '', formatter: format_countryFlag },
+				{ field:'LogoClub',			width:'20%', sortable:false,    title: '', formatter: format_countryFlag },
 				//{ field:'Observaciones',width:2, sortable:true,    title: 'Observaciones' },
 				{ field:'Baja',			hidden:true }
 			]],
@@ -221,8 +221,8 @@ $config =Config::getInstance();
             		{ field:'Nombre',	width:30, sortable:true,	title: '<?php _e('Name'); ?>' },
 					{ field:'NombreLargo',hidden:true},
 					{ field:'Genero',	hidden:true},
-            		{ field:'Categoria',width:15, sortable:false,	title: '<?php _e('Cat.'); ?>' },
-            		{ field:'Grado',	width:25, sortable:false,   title: '<?php _e('Grade'); ?>' },
+            		{ field:'Categoria',width:15, sortable:false,	title: '<?php _e('Cat.'); ?>',formatter:formatCategoria },
+            		{ field:'Grado',	width:25, sortable:false,   title: '<?php _e('Grade'); ?>',formatter:formatGrado },
             		{ field:'Raza',		width:25, sortable:false,   title: '<?php _e('Breed'); ?>' },
             		{ field:'LOE_RRC',	width:25, sortable:true,    title: '<?php _e('KC id'); ?>' },
             		{ field:'Licencia',	width:25, sortable:true,    title: '<?php _e('License'); ?>' }

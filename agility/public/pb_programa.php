@@ -13,7 +13,7 @@ if ( ! $am->allowed(ENABLE_PUBLIC)) { include_once("unregistered.php"); return 0
 <!--
 pb_inscripciones.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -29,17 +29,17 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 <!-- Presentacion de las inscripciones de la jornada -->
 <div id="pb_programa-window">
 	<div id="pb_programa-layout" style="width:100%">
-		<div id="pb_programa-Cabecera" data-options="region:'north',split:false" style="height:80px" class="pb_floatingheader">
+		<div id="pb_programa-Cabecera" data-options="region:'north',split:false" style="height:10%;" class="pb_floatingheader">
             <a id="pb_header-link" class="easyui-linkbutton" onClick="pb_updatePrograma();" href="#" style="float:left">
                 <img id="pb_header-logo" src="/agility/images/logos/agilitycontest.png" width="50" />
             </a>
 		    <span style="float:left;padding:10px" id="pb_header-infocabecera"><?php _e('Header'); ?></span>
 			<span style="float:right" id="pb_header-texto"><?php _e('Journey activities info'); ?></span>
 		</div>
-		<div id="pb_tabla" data-options="region:'center'">
+		<div id="team_table" data-options="region:'center'">
             <table id="pb_programa-datagrid"></table>
 		</div>
-        <div id="pb_programa-footer" data-options="region:'south',split:false" class="pb_floatingfooter">
+        <div id="pb_programa-footer" data-options="region:'south',split:false" style="height:10%;" class="pb_floatingfooter">
             <span id="pb_footer-footerData"></span>
         </div>
 	</div>

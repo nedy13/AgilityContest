@@ -2,7 +2,7 @@
 /*
  videowall/index.php
 
- Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+ Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
  This program is free software; you can redistribute it and/or modify it under the terms
  of the GNU General Public License as published by the Free Software Foundation;
@@ -56,21 +56,62 @@ require_once(__DIR__."/../server/upgradeVersion.php");
 <link rel="stylesheet" type="text/css" href="/agility/css/style.css" />
 <link rel="stylesheet" type="text/css" href="/agility/css/datagrid.css" />
 <link rel="stylesheet" type="text/css" href="/agility/css/videowall_css.php" />
+<link rel="stylesheet" type="text/css" href="/agility/css/public_css.php" />
 <script src="/agility/lib/HackTimer/HackTimer.js" type="text/javascript" charset="utf-8" ></script>
-<script src="/agility/lib/jquery-1.11.3.min.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/lib/jquery-1.12.3.min.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/jquery.easyui.min.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-view/datagrid-detailview.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-view/datagrid-groupview.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-fileDownload-1.4.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/easyui-patches.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/datagrid_formatters.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-chronometer.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-fittext-1.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/sprintf.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/common.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/competicion.js.php" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/results_and_scores.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/events.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/videowall/videowall.js.php" type="text/javascript" charset="utf-8" > </script>
 
+
+    <style>
+
+        body {
+            /* default background from environment */
+            font-size: 100%;
+            background: <?php echo $config->getEnv('easyui_bgcolor'); ?>;
+        }
+
+        /* remove underlines around footer imagelinks */
+        a,
+        a img {
+            text-decoration: none;
+            outline: none;
+            border: 0px none transparent;
+        }
+
+		.datagrid-body .datagrid-group {
+			background-color: <?php echo $config->getEnv("vw_hdrbg3"); ?>;
+			color: <?php echo $config->getEnv("vw_hdrfg3"); ?>;
+			height:40px;
+			line-height: 40px;
+		}
+
+		.datagrid-body .datagrid-group .datagrid-group-title {
+			height:40px;
+			line-height: 40px;
+			font-weight: bold;
+		}
+
+		.datagrid-body .datagrid-group .datagrid-group-expander {
+			margin-top:7px;
+		}
+
+    </style>
+
 <script type="text/javascript" charset="utf-8">
+
 function initialize() {
 	// make sure that every ajax call provides sessionKey
 	$.ajaxSetup({
@@ -93,7 +134,8 @@ function initialize() {
  * @return {string} proper row style for given idx
  */
 function myRowStyler(idx,row) {
-	var res="background-color:";
+	var height=(ac_config.vwc_simplified==0)?40:50;
+	var res="height:"+height+"px;line-height:"+height+"px;background-color:";
 	var c1='<?php echo $config->getEnv('vw_rowcolor1'); ?>';
     var c2='<?php echo $config->getEnv('vw_rowcolor2'); ?>';
 	if ( (idx&0x01)==0) { return res+c1+";"; } else { return res+c2+";"; }
@@ -108,7 +150,8 @@ function myTransparentRowStyler(idx,row) {
 }
 /* same as above, but tracks tanda and team information */
 function myLlamadaRowStyler(idx,row) {
-    var res="background-color:";
+	var height=(ac_config.vwc_simplified==0)?40:50;
+	var res="height:"+height+"px;line-height:"+height+"px;background-color:";
     var c1='<?php echo $config->getEnv('easyui_rowcolor1'); ?>';
     var c2='<?php echo $config->getEnv('easyui_rowcolor2'); ?>';
     var tnd='<?php echo $config->getEnv('vw_hdrbg2'); ?>';
@@ -119,48 +162,6 @@ function myLlamadaRowStyler(idx,row) {
 }
 
 </script>
-
-<style>
-
-    body {
-        /* default background from environment */
-        font-size: 100%;
-        background: <?php echo $config->getEnv('easyui_bgcolor'); ?>;
-    }
-
-    /* remove underlines around footer imagelinks */
-    a,
-    a img {
-        text-decoration: none;
-        outline: none;
-        border: 0px none transparent;
-    }
-
-    .datagrid_vw-class {
-        background:transparent;
-        filter:alpha(opacity=60);
-        -moz-opacity:0.6;
-        opacity:0.6;
-        border: 1px solid black;
-    }
-
-    /* ajuste de las cabeceras de los datagrid groupview */
-    .datagrid-body .datagrid-group {
-        background-color: <?php echo $config->getEnv('vw_hdrbg2'); ?>;
-        height:40px;
-        line-height: 40px;
-    }
-    .datagrid-body .datagrid-group .datagrid-group-title {
-        height:40px;
-        line-height: 40px;
-        font-weight: bold;
-    }
-    .datagrid-body .datagrid-group .datagrid-group-expander {
-        margin-top:7px;
-    }
-
-</style>
-
 </head>
 
 <body style="margin:0;padding:0;background-color:blue;font-size:100%" onload="initialize();">
@@ -177,21 +178,17 @@ function myLlamadaRowStyler(idx,row) {
     	<div class="fitem">
        		<label for="Vista"><?php _e('Select View'); ?>:</label>
        		<select id="selvw-Vista" name="Vista" style="width:200px">
-                <optgroup label="Video Marcadores">
+                <optgroup label="<?php _e('Video Wall');?> ">
                     <!-- videowall -->
                     <option value="0"><?php _e('Starting order'); ?></option>
                     <option value="1"><?php _e('Call to ring'); ?></option>
                     <option value="2"><?php _e('Partial scores'); ?></option>
-                    <option value="3"><?php _e('Combo view'); ?></option>
                 </optgroup>
-                <optgroup label="Live Stream">
-                    <!-- livestream -->
-                    <option value="4"><?php _e('On Screen Display'); ?></option>
-                    <option value="5"><?php _e('Partial scores'); ?></option>
-                    <option value="6"><?php _e('Starting order'); ?></option>
-                </optgroup>
-				<optgroup label="experimental">
-					<option value="7"><?php _e('Combo View (partial)'); ?></option>
+				<optgroup label="<?php _e('Combo view');?> ">
+					<option value="7"><?php _e('Call to ring '); ?> / <?php _e('Partial scores'); ?></option>
+					<option value="8"><?php _e('Call to ring '); ?> / <?php _e('Final scores'); ?></option>
+					<option value="9"><?php _e('Call'); ?> / <?php _e('Final'); ?> (<?php _e('simplified'); ?>)</option>
+					<option value="3"><?php _e('Combo view (old-style)'); ?></option>
 				</optgroup>
        		</select>
     	</div>
@@ -279,7 +276,9 @@ function vw_accept() {
 	// store selected data into global structure
 	workingData.sesion=s.ID;
 	workingData.nombreSesion=s.Nombre;
-	initWorkingData(s.ID);
+	initWorkingData(s.ID,videowall_eventManager);
+	ac_config.vwc_simplified=0;
+	ac_config.vw_combined=0;
 	var page="'/agility/console/frm_notavailable.php";
 	var n=parseInt($('#selvw-Vista').val());
 	switch (n){
@@ -292,20 +291,21 @@ function vw_accept() {
 	case 2: // Resultados Parciales
 		page="/agility/videowall/vw_parciales.php";
 		break;
-    case 3: // Vista Combinada
-        page="/agility/videowall/vw_combinada.php";
+    case 3: // Vista Combinada (legacy style)
+        page="/agility/videowall/vwc_oldstyle.php";
         break;
-	case 4: // Live Stream OSD
-		page="/agility/videowall/vw_livestream.php";
+	case 7: // pantalla combinada ( Resultados parciales )
+			page="/agility/videowall/vwc_parciales.php";
+			ac_config.vw_combined=1;
 		break;
-    case 5: // resultados parciales con livestream
-        page="/agility/videowall/vwls_parciales.php";
-        break;
-    case 6: // resultados parciales con livestream
-        page="/agility/videowall/vwls_ordensalida.php";
-        break;
-	case 7: // prueba de nueva combinada de datos parciales
-		page="/agility/videowall/vw_combinadap.php";
+	case 8: // pantalla comobinada ( Clasificacion final )
+		page="/agility/videowall/vwc_finales.php";
+		ac_config.vw_combined=1;
+		break;
+	case 9: // pantalla comobinada simplificada ( Clasificacion final )
+		page="/agility/videowall/vwc_finales_simplified.php";
+		ac_config.vw_combined=1;
+		ac_config.vwc_simplified=1;
 		break;
 	}
 	$('#selvw-dialog').dialog('close');
@@ -313,21 +313,6 @@ function vw_accept() {
 			page,
 			function(response,status,xhr){
 				if (status=='error') $('#vw_contenido').load('/agility/console/frm_notavailable.php');
-				else {
-					var bg=workingData.datosSesion.Background;
-					var ls1=workingData.datosSesion.LiveStream;
-					var ls2=workingData.datosSesion.LiveStream2;
-					var ls3=workingData.datosSesion.LiveStream3;
-					if ( bg !== '' ) $('#vwls_video').attr('poster', bg);
-					if ( ls1!== '' ) $('#vwls_videomp4').attr('src', ls1); else $('#vwls_videomp4').remove();
-					if ( ls2!== '' ) $('#vwls_videoogv').attr('src', ls2); else $('#vwls_videoogv').remove();
-					if ( ls3!== '' ) $('#vwls_videowebm').attr('src', ls3); else $('#vwls_videowebm').remove();
-					// if LiveStream is present load and play assigned session's livestream url
-					var video=$('#vwls_video')[0];
-					if (!video) return;
-					video.load();
-					video.play();
-				}
 			}
 		);
 }

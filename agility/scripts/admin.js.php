@@ -1,7 +1,7 @@
 /*
 admin.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -122,7 +122,7 @@ function restoreDatabase(){
                                     '<?php _e("Database restore success<br />Press Accept to re-init application"); ?>',
                                     "info",
                                     function(){window.location.reload();} // reload application main page
-                                ).window('resize',{width:300});;
+                                ).window('resize',{width:350});
                             }
                             $.messager.progress('close');
                         },

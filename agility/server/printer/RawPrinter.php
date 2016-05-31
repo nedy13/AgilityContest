@@ -15,7 +15,7 @@ require_once(__DIR__."/Escpos.php");
 /*
 RawPrinter.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -43,16 +43,16 @@ class RawPrinter {
     protected $cronoInter;
     protected $cronoMillis;
 
-    function __construct() {
+    function __construct($printer="",$wide=-1) {
         // initialize
         $this->myConfig=Config::getInstance();
         $l=$this->myConfig->getEnv("debug_level");
         $this->myLogger= new Logger("RawPrinter",$l);
         // retrieve configuration
-        $this->printerName=$this->myConfig->getEnv("event_printer");
+        $this->printerName=($printer=="")?$this->myConfig->getEnv("event_printer"):$printer;
         $this->cronoInter= intval($this->myConfig->getEnv("crono_intermediate"));
         $this->cronoMillis= intval($this->myConfig->getEnv("crono_milliseconds"));
-        $this->widePrinter= intval($this->myConfig->getEnv("wide_printer"));
+        $this->widePrinter= ($wide<0)? intval($this->myConfig->getEnv("wide_printer")):$wide;
         // on empty name disable raw printing. notify and return
         if($this->printerName==="") { // no printer declared
             $this->myLogger->info("No printer declared. raw printing is disabled");
@@ -111,7 +111,7 @@ class RawPrinter {
         $j=$data['Jornada']->Nombre;
         $m=Mangas::$tipo_manga[$data['Manga']->Tipo][3];
         $d=date('H:i:s');
-        $l1=sprintf("% -10s % -6s % 12s %s",substr(toASCII($p),0,14),substr(toASCII($j),0,9),toASCII($m),$d);
+        $l1=sprintf("% -12s % -7s % 12s %s",substr(toASCII($p),0,12),substr(toASCII($j),0,7),substr(toASCII($m),0,12),$d);
         $printer->text($l1);
         $printer->feed(1);
         $drs=$data['Resultados']['Dorsal'];
@@ -125,7 +125,7 @@ class RawPrinter {
         $printer->feed(1);
         $guia=$data['Resultados']['NombreGuia'];
         $club=$data['Resultados']['NombreClub'];
-        $l3=sprintf("% -27s % 14s",toASCII($guia),toASCII($club));
+        $l3=sprintf("% -27s % 14s",substr(toASCII($guia),0,27),substr(toASCII($club),0,14));
         $printer->text($l3);
         $printer->feed(1);
         $f=$data['Resultados']['Faltas'];
@@ -164,6 +164,38 @@ class RawPrinter {
         // extract data from event
         $data=$this->rawprinter_retrieveData($event);
         $printer->initialize();
+        // set up char size according printer width 58/80mmts
+        $printer->setFont(($this->widePrinter==0)?Escpos::FONT_B:Escpos::FONT_A);
+        $this->rawprinter_writeData($printer,$data);
+        $printer->close();
+    }
+
+    function rawprinter_Check() {
+        $printer=$this->rawprinter_Open();
+        if (!$printer) return;
+        $printer->initialize();
+        $data= array(
+            "Prueba" => (object) ['Nombre' => "Printer test" ],
+            "Jornada" => (object) ['Nombre' => "Journey" ],
+            "Manga" => (object) ['Tipo' => 0 ],
+            "Resultados" => array(
+                "Dorsal" => "Dors",
+                "Nombre" => "Dog Name",
+                "Categoria" => "C",
+                "Grado" => "Grd",
+                "Licencia" => "Lic",
+                "Celo" => "Heat",
+                "NombreGuia" => "Handler name.......",
+                "NombreClub" => "Club name.........",
+                "Faltas" => 3,
+                "Tocados" => 2,
+                "Rehuses" => 1,
+                "TIntermedio" => 43.210,
+                "Tiempo" => 54.321,
+                "Eliminado" => 0,
+                "NoPresentado" => 0,
+            )
+        );
         // set up char size according printer width 58/80mmts
         $printer->setFont(($this->widePrinter==0)?Escpos::FONT_B:Escpos::FONT_A);
         $this->rawprinter_writeData($printer,$data);

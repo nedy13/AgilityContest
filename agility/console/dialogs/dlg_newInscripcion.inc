@@ -1,7 +1,7 @@
 <!-- 
 dlg_newInscripcion.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -149,8 +149,8 @@ $('#new_inscripcion-datagrid').datagrid({
 		{field:'Club',hidden:'true'},
         {field:'Nombre', sortable:true, title:'<?php _e('Dog'); ?>',width:20,align:'right',formatter:formatBold},
         {field:'Licencia', sortable:true, title:'<?php _e('Lic'); ?>.',width:10,align:'right'},
-		{field:'Categoria', sortable:true, title:'<?php _e('Cat'); ?>.',width:5,align:'center'},
-		{field:'Grado', title:'<?php _e('Grade'); ?>', width:5,align:'center'},
+		{field:'Categoria', sortable:true, title:'<?php _e('Cat'); ?>.',width:5,align:'center',formatter:formatCategoria},
+		{field:'Grado', title:'<?php _e('Grade'); ?>', width:5,align:'center',formatter:formatGrado},
 		{field:'NombreGuia', sortable:true, title:'<?php _e('Handler'); ?>',width:35,align:'right'},
 		{field:'NombreClub',title:'<?php _e('Club'); ?>',width:20,align:'right'}
 	]],

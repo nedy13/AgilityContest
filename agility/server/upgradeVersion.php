@@ -3,7 +3,7 @@
 /*
 upgradeVersion.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -47,6 +47,11 @@ class Updater {
         // connect database with proper permissions
         $this->conn = DBConnection::getRootConnection();
         if ($this->conn->connect_error) throw new Exception("Cannot perform upgrade process: database::dbConnect()");
+    }
+
+    function slaveMode() {
+        if (intval($this->config->getEnv("restricted"))==0) return false;
+        return true;
     }
 
     function updateVersionHistory() {
@@ -184,7 +189,7 @@ class Updater {
         // prepare "prepared statement"
         $stmt=$this->conn->prepare($str);
         if (!$stmt) throw new Exception("upgrade::addCountries(prepare) ".$this->conn->error);
-        $res=$stmt->bind_param('ssss',$country,$lcountry,$name,$logo);
+        $res=$stmt->bind_param('ssss',$name,$lcountry,$country,$logo);
         if (!$res) throw new Exception("upgrade::addCountries(bind) ".$this->conn->error);
         foreach(Country::$countryList as $key => $val) {
             $country=$key;
@@ -195,14 +200,46 @@ class Updater {
         }
     }
 
+    function upgradeTeams() {
+        $cmds= array(
+            "UPDATE `Jornadas` SET `Equipos3`=3 WHERE (`Equipos3`=1);",
+            "UPDATE `Jornadas` SET `Equipos4`=4 WHERE (`Equipos4`=1);"
+        );
+        foreach ($cmds as $query) { $this->conn->query($query); }
+        return 0;
+    }
+
     // clear (if any) Application Upgrade request
     function removeUpdateMark() {
         $f=__DIR__."/../../logs/do_upgrade";
         if (file_exists($f)) unlink($f);
     }
+
+    function setTRStoFloat() {
+        $cmds= array(
+            "ALTER TABLE `Mangas` MODIFY `TRS_L_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRM_L_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRS_M_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRM_M_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRS_S_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRM_S_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRS_T_Factor` float(5);",
+            "ALTER TABLE `Mangas` MODIFY `TRM_T_Factor` float(5);"
+        );
+        // comprobamos si es necesario hacerlo
+        $str= "SELECT data_type FROM information_schema.COLUMNS WHERE table_schema='agility' AND table_name='Mangas' AND column_name='TRS_L_Factor'";
+        $rs=$this->conn->query($str);
+        if (!$rs) throw new Exception ("upgrade::setTRStoFloat(): ".$this->conn->error);
+        $res = $rs->fetch_array(MYSQLI_ASSOC);
+        if (strpos($res['data_type'],'int')===false) return 0; // already done
+        // not done: change every TRS/TRM field to float
+        foreach ($cmds as $query) { $this->conn->query($query); }
+        return 0;
+    }
 }
 
 $upg=new Updater();
+if ($upg->slaveMode()==true) return; // restricted mode. do not try to update database anyway
 try {
     $upg->removeUpdateMark();
     $upg->updateVersionHistory();
@@ -210,10 +247,13 @@ try {
     $upg->addCountries();
     $upg->addColumnUnlessExists("Mangas","Orden_Equipos","TEXT");
     $upg->addColumnUnlessExists("Resultados","TIntermedio","double","0.0");
+    $upg->addColumnUnlessExists("Resultados","Games","int(4)",0);
     $upg->addColumnUnlessExists("Perros","NombreLargo","varchar(255)");
     $upg->addColumnUnlessExists("Perros","Genero","varchar(16)");
     $upg->addColumnUnlessExists("Provincias","Pais","varchar(2)","ES");
     $upg->updateInscripciones();
+    $upg->upgradeTeams();
+    $upg->setTRStoFloat();
 } catch (Exception $e) {
     syslog(LOG_ERR,$e);
 }

@@ -6,7 +6,7 @@ $config =Config::getInstance();
 /*
 chrono.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -27,7 +27,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
  * @param {string} type Event Type
  * @param {object} data Event data
  */
-function chrono_putEvent(type,data){
+function chrono_putEvent(type,dat){
 	// setup default elements for this event
 	var obj= {
 			'Operation':'chronoEvent',
@@ -46,7 +46,7 @@ function chrono_putEvent(type,data){
 		type:'GET',
 		url:"/agility/server/database/eventFunctions.php",
 		dataType:'json',
-		data: $.extend({},obj,data),
+		data: $.extend({},obj,dat),
 		success: function(data) {
 			if (data.errorMsg)  $.messager.show({ width:300, height:150, title: 'Error', msg: data.errorMsg });
 		}
@@ -54,7 +54,7 @@ function chrono_putEvent(type,data){
 }
 
 function need_resetChrono(data) {
-	if (! isJornadaEq4()) return true;
+	if (! isJornadaEqConjunta()) return true;
 	// en equipos4 resetea si cambio de equipo
 	var eq=workingData.teamsByJornada[data["Equipo"]].Nombre;
 	if ($('#chrono_NombreClub').html()!==eq) return false;
@@ -71,8 +71,18 @@ var c_llamada = new Countdown({
 		var dta=sprintf('%d.%d', Math.floor(tsec/10),tsec%10);
 		$('#chrono_Tiempo').html(dta);
 	}, // callback for each second
-    // onCounterEnd: function(){  $('#tdialog_Tiempo').html('<span class="blink" style="color:red">-out-</span>'); } // final action
-    onCounterEnd: function(){ /* empty: let the tablet do the work */    }
+    // onCounterEnd: function(){  $('#tdialog_Tiempo').html('<span class="blink">-out-</span>'); } // final action
+    onCounterEnd: function(){
+    	/* start automatic chronometer.
+    	    IMPORTANT NOTICE:
+    	    This order is conflicting with start manual cronometer from tablet
+    	    So the golden rule is:
+    	    - IF using electronic chronometer
+    	    - THEN make sure tablet&crono options has "what to do when 15sec countdown goes to zero"
+    	      IS SET TO "eliminated" or "do nothing"
+    	 */
+		chrono_sensor('crono_start',{},5000); // 5 seconds salvaguard to skip start jump
+	}
 });
 
 var c_reconocimiento = new Countdown({
@@ -117,8 +127,100 @@ function c_updateData(data) {
 	if (data["Tocados"]!=-1) $('#chrono_Tocados').html(data["Tocados"]);
 	if (data["Rehuses"]!=-1) $('#chrono_Rehuses').html(data["Rehuses"]);
 	// if (data["Tiempo"]!=-1) $('#chrono_Tiempo').html(data["Tiempo"]);
-	if (data["Eliminado"]==1)	$('#chrono_Tiempo').html('<span class="blink" style="color:red"><?php _e("Elim");?>.</span>');
-	if (data["NoPresentado"]==1) $('#chrono_Tiempo').html('<span class="blink" style="color:red"><?php _e("NoPr");?>.</span>');
+	// on update hide puesto
+	$('#chrono_PuestoLbl').html('');
+	var e=parseInt(data["Eliminado"]);
+	if (e>=0) {
+		$('#chrono_Eliminado').html(e);
+		$('#chrono_EliminadoLbl').html((e==0)?'':'<span class="blink"><?php _e('Elim');?>.</span>');
+	}
+	var n=parseInt(data["NoPresentado"]);
+	if (n>=0) {
+		$('#chrono_NoPresentado').html(n);
+		$('#chrono_NoPresentadoLbl').html((n==0)?'':'<span class="blink"><?php _e('NoPr');?>.</span>');
+	}
+}
+
+function c_updateDataFromChrono(data) {
+	// just call c_updateData()
+	c_updateData(data);
+}
+
+function c_clearData(event) {
+	$('#chrono_Logo').attr("src","/agility/images/logos/agilitycontest.png");
+	$('#chrono_Dorsal').html("<?php _e('Dors');?>: " );
+	$('#chrono_Nombre').html("<?php _e('Name');?>: ");
+	$('#chrono_NombreGuia').html("<?php _e('Hndlr');?>: ");
+	$('#chrono_Categoria').html("<?php _e('Cat');?>: ");
+	// hide "Grado" Information if not applicable
+	$('#chrono_Grado').html(hasGradosByJornada(workingData.datosJornada)?"<?php _e('Grad');?>: ":"");
+	// ajustamos el texto del club/pais/equipo
+	// si el numero de equipos de la jornada es mayor que 1 estamos en una jornada por equipos
+	if (Object.keys(workingData.teamsByJornada).length>1){
+		$('#chrono_NombreClub').html("<?php _e('Team')?>: ");
+	}
+	// else si estamos en una prueba internacional ponemos el nombre del pais
+	else if (isInternational(workingData.federation)) {
+		$('#chrono_NombreClub').html("<?php _e('Country')?>: ");
+	}
+	// else ponemos el nombre del club
+	else {
+		$('#chrono_NombreClub').html("<?php _e('Club')?>: ");
+	}
+	$('#chrono_Celo').html('');	// ajustamos el celo
+	// mark no dog active
+	var perro=$('#chrono_Perro').html(0);
+	// clear results frame
+	$('#chrono_Faltas').html("0");
+	$('#chrono_Tocados').html("0");
+	$('#chrono_Rehuses').html("0");
+	$('#chrono_Tiempo').html((parseInt(ac_config.numdecs)==2)?"00.00":"00.000");
+}
+
+/**
+ * evaluate and display position for this dog
+ * @param {boolean} flag: true:evaluate, false:clear
+ * @param {float} tiempo datatime from chronometer
+ */
+function c_displayPuesto(flag,time) {
+	if ( !flag) {// if requested, turn off data
+		$('#chrono_PuestoLbl').html('');
+		return false;
+	}
+
+	// use set timeout to make sure data are already refreshed
+	setTimeout(function(){
+		// phase 1 retrieve results
+		// use text() instead of html() avoid extra html code
+		var datos= {
+			'Perro':	$('#chrono_Perro').text(),
+			'Categoria':$('#chrono_Cat').text(),
+			'Grado':	$('#chrono_Grado').text(),
+			'Faltas':	$('#chrono_Faltas').text(),
+			'Tocados':	$('#chrono_Tocados').text(),
+			'Rehuses':	$('#chrono_Rehuses').text(),
+			'Eliminado':$('#chrono_Eliminado').text(),
+			'NoPresentado':$('#chrono_NoPresentado').text(),
+			'Tiempo':	time
+		};
+		// phase 2: do not call server if no perro or eliminado or not presentado
+		if (datos.Perro=="" || parseInt(datos.Perro)<=0) {
+			$('#chrono_PuestoLbl').html('');
+			return;
+		}
+		if (parseInt(datos.NoPresentado)==1) {
+			$('#chrono_PuestoLbl').html('<span class="blink" style="color:red;"><?php _e('NoPr');?>.</span>');// no presentado
+			return;
+		}
+		if (parseInt(datos.Eliminado)==1) {
+			$('#chrono_PuestoLbl').html('<span class="blink" style="color:red;"><?php _e('Elim');?>.</span>');// eliminado
+			return;
+		}
+		// phase 2: call server to evaluate partial result position
+		getPuestoParcial(datos,function(data,resultados){
+			$('#chrono_PuestoLbl').html('- '+Number(resultados.puesto).toString()+' -');
+		});
+	},0);
 }
 
 function c_showData(data) {
@@ -142,6 +244,8 @@ function c_showData(data) {
 				$('#chrono_Logo').attr("src","/agility/images/logos/"+res['LogoClub']);
 				$('#chrono_Dorsal').html("<?php _e('Dors');?>: "+dorsal );
 				$('#chrono_Nombre').html(res["Nombre"]);
+				$('#chrono_Perro').html(res["ID"]);
+				$('#chrono_Cat').html(res["Categoria"]);
 				$('#chrono_NombreGuia').html("<?php _e('Hndlr');?>: "+res["NombreGuia"]);
 				$('#chrono_Categoria').html("<?php _e('Cat');?>: "+toLongCategoria(res["Categoria"],res['Federation']));
 				// hide "Grado" Information if not applicable
@@ -173,20 +277,44 @@ function c_showData(data) {
 	$('#chrono_Tocados').html(data["Tocados"]);
 	$('#chrono_Rehuses').html(data["Rehuses"]);
 	$('#chrono_Tiempo').html(data["Tiempo"]);
-	if (data["Eliminado"]==1)	$('#chrono_Tiempo').html('<span class="blink" style="color:red">Elim.</span>');
-	if (data["NoPresentado"]==1) $('#chrono_Tiempo').html('<span class="blink" style="color:red">NoPr.</span>');
-	
+	$('#chrono_PuestoLbl').html(''); // solo se muestra puesto al final
+	var e=parseInt(data["Eliminado"]);
+	if (e>=0) {
+		$('#chrono_Eliminado').html(e);
+		$('#chrono_EliminadoLbl').html((e==0)?'':'<span class="blink"><?php _e('Elim');?>.</span>');
+	}
+	var n=parseInt(data["NoPresentado"]);
+	if (n>=0) {
+		$('#chrono_NoPresentado').html(n);
+		$('#chrono_NoPresentadoLbl').html((n==0)?'':'<span class="blink"><?php _e('NoPr');?>.</span>');
+	}
 }
 
 /**
  * send events from chronometer to console
- * @param {string} event type
- * @param {object} data event data
+ * @param {string} item button name
  */
-function chrono_button(event,data) {
-    data.Value=Date.now() - startDate;
-	if (event==='crono_rec') data.start=60*parseInt(ac_config.crono_rectime);
-	chrono_putEvent(event,data);
+function chrono_button(item) {
+	var val=1+parseInt($("#chrono_"+item).html());
+	var data={
+		'Faltas': (item=="Faltas")?val:-1,
+		'Tocados':(item=="Tocados")?val:-1,
+		'Rehuses':(item=="Rehuses")?val:-1,
+		'Eliminado':(item=="Eliminado")?val%2:-1,
+		'NoPresentado':(item=="NoPresentado")?val%2:-1
+	};
+	chrono_putEvent('crono_dat',data);
+	doBeep();
+}
+
+function chrono_rec() {
+	var val=1;
+	if (c_reconocimiento.started()) val=0;
+	var data= {
+		'Value' : Date.now() - startDate,
+		'start' : val * 60 * parseInt(ac_config.crono_rectime)
+	};
+	chrono_putEvent('crono_rec',data);
 	doBeep();
 }
 
@@ -219,31 +347,58 @@ function chrono_sensor(event,data,guard) {
 function bindKeysToChrono() {
     // parse keypress event on every  button
 	$(document).keydown(function(e) {
+		var val=0;
+		var inc=(e.ctrlKey)?-1:1; // take care on control key
 		switch(e.which) {
 			// reconocimiento de pista
 			case 55: // '7' -> comienzo del reconocimiento
 			case 48: // '0' -> fin del reconocimiento
-				chrono_button('crono_rec',{});
+				var data= {
+					'Value' : Date.now() - startDate,
+					'start' : 60 * parseInt(ac_config.crono_rectime)
+					};
+				chrono_putEvent('crono_rec',data);
 				break;
-			// entrada de datos desde crono
+			// entrada de datos desde crono -1:dec +1:inc 0:nochange
 			case 70: // 'F' -> falta
-				chrono_button('crono_dat',{'Falta':1});
+				val=inc + parseInt($("#chrono_Faltas").html());
+				if (val<0) val=0;
+				$("#chrono_Faltas").html(val);
+				chrono_putEvent('crono_dat',{'Faltas':val,'Tocados':-1,'Rehuses':-1,'NoPresentado':-1,'Eliminado':-1});
 				break;
 			case 82: // 'R' -> rehuse
-				chrono_button('crono_dat',{'Rehuse':1});
+				val=inc + parseInt($("#chrono_Rehuses").html());
+				if (val<0) val=0;
+				$("#chrono_Rehuses").html(val);
+				chrono_putEvent('crono_dat',{'Faltas':-1,'Tocados':-1,'Rehuses':val,'NoPresentado':-1,'Eliminado':-1});
 				break;
 			case 84: // 'T' -> tocado
-				chrono_button('crono_dat',{'Tocado':1});
+				val=inc + parseInt($("#chrono_Tocados").html());
+				if (val<0) val=0;
+				$("#chrono_Tocados").html(val);
+				chrono_putEvent('crono_dat',{'Faltas':-1,'Tocados':val,'Rehuses':-1,'NoPresentado':-1,'Eliminado':-1});
 				break;
 			case 69: // 'E' -> eliminado
-				chrono_button('crono_dat',{'Eliminado':1});
+				val=inc + parseInt($("#chrono-Eliminado").html());
+				val=(val<=0)?0:1;
+				$("#chrono_Eliminado").html(val);
+				$('#chrono_EliminadoLbl').html((val==0)?'':'<span class="blink" ><?php _e('Elim');?>.</span>');
+				chrono_putEvent('crono_dat',{'Faltas':-1,'Tocados':-1,'Rehuses':-1,'NoPresentado':-1,'Eliminado':val});
 				break;
 			case 78: // 'N' -> no presentado
-				chrono_button('crono_dat',{'NoPresentado':1});
+				val=inc + parseInt($("#chrono-NoPresentado").html());
+				val=(val<=0)?0:1;
+				$("#chrono_NoPresentado").html(val);
+				$('#chrono_NoPreseentadoLbl').html((val==0)?'':'<span class="blink"><?php _e('NoPr');?>.</span>');
+				chrono_putEvent('crono_dat',{'Faltas':-1,'Tocados':-1,'Rehuses':-1,'NoPresentado':val,'Eliminado':-1});
+				break;
+			// arranque parada del crono
+			case 71: // 'G' -> Start 15 seconds countdown
+				chrono_sensor('salida',{},1000);
 				break;
 			// arranque parada del crono
             case 8: // 'Del' -> chrono reset
-                chrono_button('crono_reset',{});
+                chrono_putEvent('crono_reset',{});
                 break;
 			case 36: // 'Begin' -> chrono start
 				chrono_sensor('crono_start',{},4000);
@@ -276,11 +431,12 @@ function bindKeysToChrono() {
 				// pass to upper layer to caught and process
                 return true;
 		}
+		doBeep();
 		return false;
 	});
 }
 
-function chrono_processEvents(id,evt) {
+function chrono_eventManager(id,evt) {
 	var cra=$('#cronoauto');
 	var crm=$('#chrono_Manual'); // Texto "manual"
 	var cre=$('#chrono_Error');  // Textro "comprobar sensores"
@@ -292,29 +448,30 @@ function chrono_processEvents(id,evt) {
 	case 'null': // null event: no action taken
 		return;
 	case 'init': // operator starts tablet application
+		c_clearData(event);
 		return;
-		case 'open': // operator select tanda:
+	case 'open': // operator select tanda:
 		// update working data. when done update header
 	 	setupWorkingData(event['Pru'],event['Jor'],(event['Mng']>0)?event['Mng']:1,c_updateHeader);
-		// actualizar datos de prueba, jornada, manga y logotipo del club
+		// remove puesto info as no sense here
+		c_displayPuesto(false,0); // clear puesto
+		return;
+	case 'close': // no more dogs in tabla
+		c_clearData(event);
 		return;
 	case 'datos': // actualizar datos (si algun valor es -1 o nulo se debe ignorar)
 		c_updateData(event);
 		return;
 	case 'llamada':	// llamada a pista
-        crm.text('').removeClass('blink');
-		// todo: en 4 conjunta solo para crono si cambio de equipo
-		if (need_resetChrono()) {
-			cra.Chrono('stop',time);
-			cra.Chrono('reset');
-		}
 		c_showData(event);
 		return;
 	case 'salida': // orden de salida
         crm.text('').removeClass('blink');
+		c_displayPuesto(false,0); // clear puesto
 		c_llamada.start();
 		return;
 	case 'start': // arranque manual del cronometro
+		c_displayPuesto(false,0); // clear puesto
 		if (ssf.text()==="Auto") return; // si crono automatico, ignora
 		c_llamada.stop();
 		c_reconocimiento.stop();
@@ -329,8 +486,10 @@ function chrono_processEvents(id,evt) {
 		c_reconocimiento.stop();// also, not really needed, but...
 		ssf.text("Start");
 		cra.Chrono('stop',time);
+		c_displayPuesto(true,cra.Chrono('getValue')/1000);
 		return;// Value contiene la marca de tiempo
 	case 'crono_start': // arranque crono electronico
+		c_displayPuesto(false,0);
 		ssf.text('Auto');
 		// si esta parado, arranca en modo automatico
 		if (!cra.Chrono('started')) {
@@ -360,6 +519,7 @@ function chrono_processEvents(id,evt) {
 		cre.text('').removeClass('blink'); // clear 'Sensor Error' mark
 		cra.Chrono('stop',time);
 		cra.Chrono('reset');
+		c_displayPuesto(false,0);
 		return;
 	case 'crono_int':	// tiempo intermedio crono electronico
 		if (!cra.Chrono('started')) return;		// si crono no esta activo, ignorar
@@ -374,28 +534,34 @@ function chrono_processEvents(id,evt) {
     case 'crono_stop':	// parada crono electronico
 		ssf.text("Start");
 		cra.Chrono('stop',time);
+		c_displayPuesto(true,cra.Chrono('getValue')/1000);
 		return;
 	case 'crono_dat': // operador pulsa botonera del crono
-			// at this moment, every crono_dat events are ignored:
-			// this is a sample implementation and this crono is not designed
-			// to work without tablet; so no sense to take care
-			// on 'crono_dat' events: just use 'datos' event from tablet instead
+		c_updateDataFromChrono(event);
 		return;
 	case 'crono_rec': // reconocimiento de pista
-		// si crono esta activo, ignorar
-		if (cra.Chrono('started')) return;
-		if (c_reconocimiento.val()!==0) c_reconocimiento.stop();
-		else {
+		// si crono esta activo, ignora
+		if (cra.Chrono('started')) c_reconocimiento.stop();
+		// si no, vemos si hay que arrancar o parar
+		if (parseInt(event['start'])!=0)  { // arrancar crono
 			c_reconocimiento.reset(event['start']);
 			c_reconocimiento.start();
+		} else {
+			c_reconocimiento.stop();
 		}
 		return;
 	case 'cancelar': // operador pulsa cancelar en tablet
+		c_clearData(event);
 		return;
 	case 'aceptar':	// operador pulsa aceptar en tablet
 		return;
     case 'info':	// click on user defined tandas
         return;
+	case 'camera': // video source for live stream has changed
+		return;
+	case 'reconfig': // reload configuration from server
+		loadConfiguration();
+		return;
 	default:
 		alert("Unknow Event type: "+event['Type']);
 		return;

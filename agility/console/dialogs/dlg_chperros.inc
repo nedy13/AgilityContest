@@ -1,7 +1,7 @@
 <!-- 
 dlg_chperros.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -146,8 +146,8 @@ $config =Config::getInstance();
 			{field:'ID',hidden:'true'},
 			{field:'Federation',hidden:'true'},
 			{field:'Nombre',title:'<?php _e('Dog'); ?>',width:20,align:'right'},
-			{field:'Categoria',title:'<?php _e('Cat'); ?>.',width:10,align:'center'},
-			{field:'Grado',title:'<?php _e('Grade'); ?>',width:10,align:'center'},
+			{field:'Categoria',title:'<?php _e('Cat'); ?>.',width:10,align:'center',formatter:formatCategoria},
+			{field:'Grado',title:'<?php _e('Grade'); ?>',width:10,align:'center',formatter:formatGrado},
 			{field:'NombreGuia',title:'<?php _e('Handler'); ?>',width:40,align:'right'},
 			{field:'NombreClub',title:'<?php _e('Club'); ?>',width:20,align:'right'}
 		]],
@@ -172,7 +172,11 @@ $config =Config::getInstance();
     	method: 'get',
     	mode: 'remote',
 		required: true,
-    	url:'/agility/server/database/dogFunctions.php?Operation=grados',
+        url:'/agility/server/database/dogFunctions.php',
+        queryParams: {
+        Operation:'grados',
+            Federation: workingData.federation
+        },
     	// TODO: this should work. study why doesn't
 		onLoadSuccess: function(data){
 			for(var i=0; i<data.length; i++){
@@ -192,6 +196,10 @@ $config =Config::getInstance();
 		method: 'get',
 		mode: 'remote',
 		required: true,
-		url:'/agility/server/database/dogFunctions.php?Operation=categorias'
+        url:'/agility/server/database/dogFunctions.php',
+        queryParams: {
+        Operation:'categorias',
+            Federation: workingData.federation
+        }
     });
     </script>

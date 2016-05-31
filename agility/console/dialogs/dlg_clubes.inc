@@ -1,7 +1,7 @@
  <!-- 
 dlg_clubes.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -24,7 +24,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
  <!-- FORMULARIO DE SELECCION DE LOGO -->
  <div id="clubes-logo-dialog" style="width:400px;height:250px;padding:10px">
  	<div style="width=100%">
-		<input type="file" name="logoPreview" value="" id="clubes-logo-filePreview" 
+		<input type="file" name="logoPreview" value="" id="clubes-logo-filePreview" accept="image/*"
 			class="required borrowerImageFile" data-errormsg="PhotoUploadErrorMsg" onchange="setLogoPreview(this);">
 		<hr />
 	</div>
@@ -214,6 +214,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
             	$('#clubes-logo-preview').attr('src', $('#clubes-Logo').attr('src'));
             }
         } );
+
         $('#clubes-dialog').dialog( {
             closed:true,
             modal:true,

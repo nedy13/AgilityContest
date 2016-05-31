@@ -12,7 +12,7 @@ if ( ! $am->allowed(ENABLE_VIDEOWALL)) { include_once("unregistered.php"); retur
 <!--
 vw_ordensalida.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -40,9 +40,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
             </div>
 		</div>
 		<div id="vw_tabla" data-options="region:'center'">
-            <a href="#vwls_bottom" id="vwls_top"></a>
 			<table id="vw_ordensalida-datagrid"></table>
-            <a href="#vwls_top" id="vwls_bottom"></a>
 		</div>
         <div id="vw_ordensalida-footer" data-options="region:'south',split:false" class="vw_floatingfooter">
             <span id="vw_footer-footerData"></span>
@@ -64,7 +62,7 @@ $('#vw_ordensalida-window').window({
     resizable:true,
     callback: null,
     onOpen: function() {
-        startEventMgr(workingData.sesion,vw_procesaOrdenSalida);
+        startEventMgr();
     }
 });
 
@@ -96,17 +94,18 @@ $('#vw_ordensalida-datagrid').datagrid({
         { field:'Pendiente',	width:0, hidden:true },
         { field:'Tanda',		width:0, hidden:true },
         { field:'Equipo',		width:0, hidden:true },
-        { field:'Logo',     	width:'5%', align:'center',	title: '',formatter: formatLogo },
+        { field:'LogoClub',    	width:'5%', align:'center',	title: '',formatter: formatLogo },
         { field:'NombreEquipo',	width:'12%', align:'center',title: '<?php _e('Team'); ?>',hidden:true},
         { field:'Dorsal',		width:'5%', align:'center',	title: '<?php _e('Dorsal'); ?>', styler:checkPending },
         { field:'Nombre',		width:'15%', align:'left',	title: '<?php _e('Name'); ?>', formatter: formatBoldBig},
         { field:'Raza',         width:'12%', align:'center',title: '<?php _e('Breed'); ?>' },
         { field:'Licencia',		width:'5%', align:'center',	title: '<?php _e('License'); ?>'},
-        { field:'NombreGuia',	width:'23%', align:'right',	title: '<?php _e('Handler'); ?>' },
-        { field:'NombreClub',	width:'19%', align:'right',	title: '<?php _e('Club'); ?>' },
-        { field:'Categoria',	width:'4%', align:'center',	title: '<?php _e('Category'); ?>' },
-        { field:'Grado',		width:'4%', align:'center',	title: '<?php _e('Grade'); ?>' },
-        { field:'Celo',			width:'4%', align:'center',	title: '<?php _e('Heat'); ?>', formatter:formatCelo }
+        { field:'NombreGuia',	width:'17%', align:'right',	title: '<?php _e('Handler'); ?>' },
+        { field:'NombreClub',	width:'13%', align:'right',	title: '<?php _e('Club'); ?>' },
+        { field:'Categoria',	width:'4%', align:'center',	title: '<?php _e('Category'); ?>',formatter:formatCategoria },
+        { field:'Grado',		width:'4%', align:'center',	title: '<?php _e('Grade'); ?>', formatter:formatGrado },
+        { field:'Celo',			width:'4%', align:'center',	title: '<?php _e('Heat'); ?>', formatter:formatCelo },
+        { field:'Observaciones',width:'12%', align:'left',	title: '<?php _e('Comments'); ?>', hidden:true }
     ]],
     // colorize rows. notice that overrides default css, so need to specify proper values on datagrid.css
     rowStyler:myRowStyler,
@@ -127,8 +126,45 @@ $('#vw_ordensalida-datagrid').datagrid({
         }
         mySelf.datagrid('fitColumns'); // expand to max width
         // start autoscrolling
-        vw_autoscroll('#vw_tabla','#vwls_bottom');
+        vw_autoscroll(mySelf,0);
     }
 });
+
+    var eventHandler= {
+        'null': null,// null event: no action taken
+        'init': function(event) { // operator starts tablet application
+            vw_updateWorkingData(event,function(evt,data){
+                vw_updateDataInfo(evt,data);
+                $('#vw_header-infomanga').html("(<?php _e('No round selected');?>)");
+                // clear datagrid
+                $('#vw_ordensalida-datagrid').datagrid('loadData', {"total":0,"rows":[]});
+            });
+        },
+        'open': function(event){ // operator select tanda
+            vw_updateWorkingData(event,function(evt,data){
+                vw_updateDataInfo(evt,data);
+                vw_updateOrdenSalida(evt,data);
+            });
+        },
+        'close': null,    // no more dogs in tanda
+        'datos': null,      // actualizar datos (si algun valor es -1 o nulo se debe ignorar)
+        'llamada': null,    // llamada a pista
+        'salida': null,     // orden de salida
+        'start': null,      // start crono manual
+        'stop': null,       // stop crono manual
+        // nada que hacer aqui: el crono automatico se procesa en el tablet
+        'crono_start':  null, // arranque crono automatico
+		'crono_restart': null,// paso de tiempo intermedio a manual
+        'crono_int':  	null, // tiempo intermedio crono electronico
+		'crono_stop':  null, // parada crono electronico
+		'crono_reset':  null, // puesta a cero del crono electronico
+		'crono_error':  null, // fallo en los sensores de paso
+        'crono_dat':    null, // datos desde crono electronico
+        'aceptar':	null, // operador pulsa aceptar
+        'cancelar': null, // operador pulsa cancelar
+        'camera':	null, // change video source
+        'reconfig':	function(event) { loadConfiguration(); }, // reload configuration from server
+        'info':	null // click on user defined tandas
+    };
 
 </script>

@@ -13,7 +13,7 @@ if ( ! $am->allowed(ENABLE_PUBLIC)) { include_once("unregistered.php"); return 0
 <!--
 pb_parciales.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -31,10 +31,24 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 
 <div id="pb_parciales-window">
     <div id="pb_parciales-layout" style="width:100%">
-        <div id="pb_parciales-Cabecera" data-options="region:'north',split:false" style="height:140px" class="pb_floatingheader">
-            <a id="pb_header-link" class="easyui-linkbutton" onClick="pb_updateParciales();" href="#" style="float:left">
+        <div id="pb_parciales-Cabecera"  style="height:20%;" class="pb_floatingheader"
+             data-options="
+                region:'north',
+                split:true,
+                title:'<?php _e('Partial scores');?>',
+                collapsed:false,
+                onCollapse:function(){
+                	setTimeout(function(){
+				    	var top = $('#pb_parciales-layout').layout('panel','expandNorth');
+				    	var round = $('#pb_enumerateParciales').combogrid('getText');
+					    top.panel('setTitle','<?php _e('Partial scores');?>: '+round);
+				    },0);
+                }
+            ">
+            <a id="pb_header-link" class="easyui-linkbutton" onClick="updateParciales();" href="#" style="float:left">
                 <img id="pb_header-logo" src="/agility/images/logos/agilitycontest.png" width="50" />
             </a>
+            <span id="header-combinadaFlag" style="display:none">false</span> <!--indicador de combinada:false-->
             <span style="float:left;padding:10px" id="pb_header-infocabecera"><?php _e('Header'); ?></span>
             <span style="float:right;padding:10px" id="pb_header-texto">
                 <?php _e('Partial scores'); ?><br/>
@@ -65,13 +79,22 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
         <div id="pb_parciales-data" data-options="region:'center'" >
             <table id="pb_parciales-datagrid"></table>
         </div>
-        <div id="pb_parciales-footer" data-options="region:'south',split:false" class="pb_floatingfooter">
+        <div id="pb_parciales-footer" data-options="region:'south',split:false" style="height:10%;" class="pb_floatingfooter">
             <span id="pb_footer-footerData"></span>
         </div>
     </div>
 </div> <!-- pb_parciales-window -->
 
 <script type="text/javascript">
+
+// fire autorefresh if configured
+var rtime=parseInt(ac_config.web_refreshtime);
+if (rtime!=0) setInterval(updateParciales,1000*rtime);
+
+// in a mobile device, increase north window height
+if (isMobileDevice()) {
+    $('#pb_parciales-Cabecera').css('height','90%');
+}
 
 addTooltip($('#pb_header-link').linkbutton(),'<?php _e("Update partial scores table"); ?>');
 $('#pb_parciales-layout').layout({fit:true});
@@ -105,10 +128,11 @@ $('#pb_enumerateParciales').combogrid({
 		return true;
 	},
     onOpen: function() {
-        pb_updateParciales(); // notice no results will still be reported. just to update header info
+        updateParciales(); // notice no results will still be reported. just to update header info
     },
 	onChange:function(value){
-		pb_updateParciales();
+		updateParciales();
+        $('#pb_parciales-layout').layout('collapse','north');
 	}
 });
 
@@ -154,7 +178,7 @@ $('#pb_parciales-datagrid').datagrid({
     autoRowHeight: true,
     view: gview,
     groupField: 'NombreEquipo',
-    groupFormatter: formatTeamResults,
+    groupFormatter: formatPbTeamResults,
     columns:[[
         { field:'Manga',		hidden:true },
         { field:'Perro',		hidden:true },
@@ -167,7 +191,7 @@ $('#pb_parciales-datagrid').datagrid({
         { field:'Nombre',		width:'10%', align:'center',  title: '<?php _e('Name'); ?>',formatter:formatBoldBig},
         { field:'NombreGuia',	width:'15%', align:'right', title: '<?php _e('Handler'); ?>' },
         { field:'NombreClub',	width:'12%', align:'right', title: '<?php _e('Club'); ?>' },
-        { field:'Categoria',	width:'4%', align:'center', title: '<?php _e('Cat'); ?>.' },
+        { field:'Categoria',	width:'4%', align:'center', title: '<?php _e('Cat'); ?>.' ,formatter:formatCategoria},
         { field:'Grado',	    hidden:true },
         { field:'Faltas',		width:'4%', align:'center', title: '<?php _e('Fault'); ?>'},
         { field:'Rehuses',		width:'4%', align:'center', title: '<?php _e('Refusal'); ?>'},

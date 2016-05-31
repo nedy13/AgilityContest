@@ -2,7 +2,7 @@
 /*
 inscripcionFunctions.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -30,6 +30,8 @@ require_once(__DIR__."/classes/Inscripciones.php");
 		$perro=http_request("Perro","i",0);
         $equipo=http_request("Equipo","i",0);
         $jornada=http_request("Jornada","i",0);
+		$olddorsal=http_request("Dorsal","i",0);
+		$newdorsal=http_request("NewDorsal","i",0);
 		if ($operation===null) throw new Exception("Call to inscripcionFunctions without 'Operation' requested");
 		switch ($operation) {
 			case "insert": $am->access(PERMS_OPERATOR); $result=$inscripciones->insert($perro); break; // nueva inscripcion
@@ -42,12 +44,13 @@ require_once(__DIR__."/classes/Inscripciones.php");
             case "inscritosbyteam": $result=$inscripciones->inscritosByTeam($equipo); break;
             case "inscritosbyjornada": $result=$inscripciones->inscritosByJornada($jornada); break;
 			case "reorder": $am->access(PERMS_OPERATOR); $result=$inscripciones->reorder(); break;
+			case "setdorsal": $am->access(PERMS_OPERATOR); $result=$inscripciones->setDorsal($perro,$olddorsal,$newdorsal); break;
 			default: throw new Exception("inscripcionFunctions:: invalid operation: $operation provided");
 		}
 		if ($result===null) 
 			throw new Exception($inscripciones->errormsg);
 		if ($result==="")
-			echo json_encode(array('success'=>true,'insert_id'=>$inscripciones->insertid,'affected_rows'=>$inscripciones->conn->affected_rows));
+			echo json_encode(array('success'=>true,'insert_id'=>$inscripciones->insertid,'affected_rows'=>0));
 		else echo json_encode($result);
 	} catch (Exception $e) {
 		do_log($e->getMessage());

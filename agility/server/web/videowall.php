@@ -2,7 +2,7 @@
 /*
 videowall.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -23,6 +23,7 @@ require_once(__DIR__ . "/../database/classes/Clubes.php");
 require_once(__DIR__ . "/../database/classes/Tandas.php");
 require_once(__DIR__ . "/../database/classes/Mangas.php");
 require_once(__DIR__ . "/../database/classes/Sesiones.php");
+require_once(__DIR__ . "/../database/classes/Jornadas.php");
 require_once(__DIR__ . "/../database/classes/Inscripciones.php");
 
 class VideoWall {
@@ -39,41 +40,66 @@ class VideoWall {
 	protected $tandatype;
 	protected $mode;
 	protected $club;
+    protected $ronda; // pre-agility, grado1,
 
-	function __construct($sessionid,$pruebaid,$jornadaid,$mangaid,$tandatype,$mode) {
+	function __construct($sessionid,$pruebaid=0,$jornadaid=0,$mangaid=0,$tandatype=0,$mode=0) {
 		$this->config=Config::getInstance();
 		$this->myLogger=new Logger("VideoWall.php",$this->config->getEnv("debug_level"));
 		$this->myDBObject=new DBObject("Videowall");
+        $this->manga=null;
+        $this->tanda=null;
+        $this->ronda=null;
+        $this->mangaid=$mangaid;
+        $this->tandatype=$tandatype;
+        $tandaid=0;
 		if ($sessionid!=0) {
             // obtenemos los datos desde la sesion abierta en el tablet
 			$this->session=$this->myDBObject->__getArray("Sesiones",$sessionid);
 			$this->sessionid=$sessionid;
-			$this->prueba=$this->myDBObject->__getArray("Pruebas",$this->session['Prueba']);
-			$this->jornada=$this->myDBObject->__getArray("Jornadas",$this->session['Jornada']);
-            $this->tanda=$this->myDBObject->__getArray("Tandas",$this->session['Tanda']);
-            $this->tandatype=$this->tanda['Tipo'];
-            if ($this->session['Manga']==0) {
-                // take care on User-defined Tandas (Manga=0)
-                $this->manga=null;
-                $this->mangaid=0;
-            } else {
-                // normal Tandas
-                $this->manga=$this->myDBObject->__getArray("Mangas",$this->session['Manga']);
-                $this->mangaid=$this->manga['ID'];
-            }
+            $pruebaid=$this->session['Prueba'];
+            $jornadaid=$this->session['Jornada'];
+            $mangaid=$this->session['Manga'];
+            $tandaid=$this->session['Tanda'];
 			$this->mode=-1;
 		} else {
             // obtenemos los datos desde las variables recibidas por http
 			$this->session=null;
 			$this->sessionid=0;
-			$this->prueba=$this->myDBObject->__getArray("Pruebas",$pruebaid);
-			$this->jornada=$this->myDBObject->__getArray("Jornadas",$jornadaid);
-			$this->manga=$this->myDBObject->__getArray("Mangas",$mangaid);
-			$this->mangaid=$this->manga['ID'];
-			$this->tanda=null;
-			$this->tandatype=$tandatype;
-			$this->mode=$mode;	
+			$this->mode=$mode;
 		}
+        $this->prueba=$this->myDBObject->__getArray("Pruebas",$pruebaid);
+        $this->jornada=$this->myDBObject->__getArray("Jornadas",$jornadaid);
+        if ($mangaid!=0) {
+            $this->manga=$this->myDBObject->__getArray("Mangas",$mangaid);
+            $this->manga['Manga']=$mangaid; // manga['ID'] contains extra info and should not be used
+            $this->mangaid=$mangaid;
+        }
+        if ($tandaid!=0) {
+            $this->tanda=$this->myDBObject->__getArray("Tandas",$tandaid);
+            $this->tandatype=$this->tanda['Tipo'];
+        }
+        // retrieve rounds for this journey
+        if ($mangaid!=0){
+            $rondas=Jornadas::enumerateRondasByJornada($jornadaid)['rows'];
+            foreach($rondas as $ronda) {
+                $cat=Tandas::$tipo_tanda[$this->tandatype]['Categoria'];
+                $this->myLogger->trace("MangaID {$this->mangaid} Cat: $cat Ronda: ".json_encode($ronda));
+                if ($ronda['Manga1']==$this->mangaid) {
+                    foreach( str_split($cat) as $c) {
+                        if (strpos($ronda['Categoria'],$c)===false) continue;
+                        $this->ronda=$ronda;
+                        break;
+                    }
+                }
+                if ($ronda['Manga2']==$this->mangaid){
+                    foreach( str_split($cat) as $c) {
+                        if (strpos($ronda['Categoria'],$c)===false) continue;
+                        $this->ronda=$ronda;
+                        break;
+                    }
+                }
+            }
+        }
         $this->club= $this->myDBObject->__getArray("Clubes",$this->prueba['Club']);
         if ($this->manga!=null) { // elimina parentesis del nombre
             $str=Mangas::$tipo_manga[$this->manga['Tipo']][1];
@@ -86,16 +112,16 @@ class VideoWall {
 	}
 
     function isTeam() {
-        if (intval($this->jornada['Equipos3'])==1) return true;
-        if (intval($this->jornada['Equipos4'])==1) return true;
+        if (intval($this->jornada['Equipos3'])!=0) return true;
+        if (intval($this->jornada['Equipos4'])!=0) return true;
         return false;
     }
 
     function hasGrades() {
-        if (intval($this->jornada['Equipos3'])==1) return false;
-        if (intval($this->jornada['Equipos4'])==1) return false;
-        if (intval($this->jornada['Open'])==1) return false;
-        if (intval($this->jornada['KO'])==1) return false;
+        if (intval($this->jornada['Equipos3'])!=0) return false;
+        if (intval($this->jornada['Equipos4'])!=0) return false;
+        if (intval($this->jornada['Open'])!=0) return false;
+        if (intval($this->jornada['KO'])!=0) return false;
         return true;
     }
 
@@ -163,7 +189,8 @@ class VideoWall {
             'Manga' => ($this->manga==null)? array() : $this->manga,
             'Tanda' => ($this->tanda==null)? array() : $this->tanda,
             'Club' => $this->club, // club organizador
-            'Sesion' => $this->session
+            'Sesion' => $this->session,
+            'Ronda' => $this->ronda
         );
         echo json_encode($res);
         return 0;
@@ -174,6 +201,7 @@ class VideoWall {
             'Prueba' => $this->prueba['ID'],
             'Jornada' => $this->jornada['ID'],
             'Manga' => $this->mangaid,
+            'LogoClub' => 'empty.png',
             'Orden' => "",
             'Dorsal' => 0,
             'Perro' => 0,
@@ -205,6 +233,8 @@ class VideoWall {
     /**
      * Obtiene $after+$before+1 perros ordenados segun el orden de salida
      * @param $perro ID de perro tomado como referencia
+     *  if ID==0 means at begin of queue
+     *  if ID<0 means at end of queue
      * @param $before numero de perros a buscar que hayan salido antes del de referencia
      * @param $after numero de perros a introducir que tengan que salir despues del de referencia
      */
@@ -223,7 +253,7 @@ class VideoWall {
         for($n=0;$n<$before+1;$n++) {
             array_unshift($result,$this->getEmptyData());
         }
-        $found=0;
+        $found=-1;
         // add dog list, setting up starting orden
         $orden=0;
         // if dog found, mark index
@@ -236,13 +266,19 @@ class VideoWall {
             array_unshift($result,$item);
             // if item matches requested dog, cut
             if ($item['Perro']==$perro) $found=count($result)-1;
-            if ($found==0) continue;
-            if (count($result)>($found+$after+1)) break;
+            if ($found<=0) continue; // not yet found
+            if ( (count($result)-$found) > $after ) break; // enought dogs; iteration no longer needed
         }
         // fill array with $after empty rows
         for($n=0;$n<$after;$n++) {
             array_unshift($result,$this->getEmptyData());
+            // if dogID<0 means seek at end of list
+            if($perro>=0) continue;
+            if($n!=0) continue;
+            $found=count($result)-1;
         }
+        // if dog is not provided nor found, just assume default
+        if ($found<0) $found=$before;
         // and return 3 arrays:
         $res=array(
             // "total" => count($res),

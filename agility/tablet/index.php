@@ -2,7 +2,7 @@
 /*
  tablet/index.php
 
- Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+ Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
  This program is free software; you can redistribute it and/or modify it under the terms
  of the GNU General Public License as published by the Free Software Foundation;
@@ -56,7 +56,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 		GNU General Public License as published by the Free Software Foundation; either version 2 of the License, 
 		or (at your option) any later version." />
 <!-- try to disable zoom in tablet on double click -->
-<meta content='width=device-width; initial-scale=1.0; maximum-scale=1.0; minimum-scale=1.0; user-scalable=no;' name='viewport' />
+<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no' name='viewport' />
 <title>AgilityContest (Tablet)</title>
 <link rel="stylesheet" type="text/css" href="/agility/lib/jquery-easyui-1.4.2/themes/<?php echo $config->getEnv('easyui_theme'); ?>/easyui.css" />
 <link rel="stylesheet" type="text/css" href="/agility/lib/jquery-easyui-1.4.2/themes/icon.css" />
@@ -64,7 +64,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 <link rel="stylesheet" type="text/css" href="/agility/css/datagrid.css" />
 <link rel="stylesheet" type="text/css" href="/agility/css/tablet.css" />
 <script src="/agility/lib/HackTimer/HackTimer.js" type="text/javascript" charset="utf-8" > </script>
-<script src="/agility/lib/jquery-1.11.3.min.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/lib/jquery-1.12.3.min.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/jquery.easyui.min.js" type="text/javascript" charset="utf-8" ></script>
 <script src="/agility/lib/jquery-easyui-1.4.2/locale/easyui-lang-<?php echo substr($config->getEnv('lang'),0,2);?>.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/jquery-easyui-1.4.2/extensions/datagrid-dnd/datagrid-dnd.js" type="text/javascript" charset="utf-8" > </script>
@@ -77,6 +77,7 @@ if ( intval($config->getEnv('restricted'))!=0) {
 <script src="/agility/lib/jquery-fileDownload-1.4.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/sprintf.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/easyui-patches.js" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/datagrid_formatters.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/common.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/auth.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/competicion.js.php" type="text/javascript" charset="utf-8" > </script>
@@ -89,6 +90,12 @@ if ( intval($config->getEnv('restricted'))!=0) {
 loadConfiguration();
 getLicenseInfo();
 getFederationInfo();
+
+var tablet_config = {
+	'StartStopMode': 0, // 0:stop, 1:start, -1:auto
+	'DataEntryEnabled':0, // 0: roundSelection enabled 1:dataEntry enabled
+	'CourseWalk':0 // 0 reconocimiento de pista parado else time
+};
 
 function initialize() {
 	// make sure that every ajax call provides sessionKey
@@ -275,8 +282,8 @@ $('#seltablet-Jornada').combogrid({
 		{ field:'Grado2',		width:7, sortable:false,	align:'center', title: 'G-II   ' },
 		{ field:'Grado3',		width:7, sortable:false,	align:'center', title: 'G-III  ' },
 		{ field:'Open',		    width:7, sortable:false,	align:'center', title: 'Open   ' },
-		{ field:'Equipos3',		width:7, sortable:false,	align:'center', title: 'Eq.3x4 ' },
-		{ field:'Equipos4',		width:7, sortable:false,	align:'center', title: 'Eq.Conj' },
+		{ field:'Equipos3',		width:7, sortable:false,	align:'center', title: 'Eq.Best' },
+		{ field:'Equipos4',		width:7, sortable:false,	align:'center', title: 'Eq.Comb' },
 		{ field:'PreAgility',	width:7, sortable:false,	align:'center', title: 'Pre. 1 ' },
 		{ field:'PreAgility2',	width:7, sortable:false,	align:'center', title: 'Pre. 2 ' },
 		{ field:'KO',			width:7, sortable:false,	align:'center', title: 'K.O.   ' },
@@ -338,13 +345,12 @@ function tablet_acceptSelectJornada() {
         	    	"info",
         	    	function() {
         	    	   	initAuthInfo(data);
-        	    	   	initWorkingData(s.ID);
+        	    	   	initWorkingData(s.ID,tablet_eventManager); // synchronous ajax call inside :-(
         	    	   	// los demas valores se actualizan en la linea anterior
-        	    		workingData.nombreSesion=s.Nombre;
         	    		workingData.nombrePrueba=p.Nombre;
+						workingData.datosPrueba=p;
+						workingData.nombreJornada=j.Nombre;
                         workingData.datosJornada=j;
-                        workingData.datosSesion=s;
-        	    		workingData.nombreJornada=j.Nombre;
                         // jornadas "normales", equipos3 y Open comparten el mismo fichero
         	    		var page="/agility/tablet/tablet_main.php";
         	    		if (workingData.datosJornada.Equipos4==1) {
@@ -360,7 +366,7 @@ function tablet_acceptSelectJornada() {
         	    				function(response,status,xhr){
         	    					if (status=='error') $('#tablet_contenido').load('/agility/frm_notavailable.php');
         	        	    		// start event manager
-        	        	    		startEventMgr(workingData.sesion,tablet_processEvents);
+        	        	    		startEventMgr();
 									setDataEntryEnabled(false);
                                     $('#tablet-layout').layout('panel','west').panel('setTitle',p.Nombre+" - "+ j.Nombre);
 									$('#tdialog-InfoLbl').html(p.Nombre + ' - ' + j.Nombre);

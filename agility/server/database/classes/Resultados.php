@@ -2,7 +2,7 @@
 /*
 Resultados.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -194,11 +194,18 @@ class Resultados extends DBObject {
 				else $result['trs']= $result_med['trs'] * ( (100.0+$factor) / 100.0) ; // (+ X por ciento)
 				break;
 			case 6: // en lugar de tiempo nos proporcionan velocidad
-				$result['vel']=$factor/10.0;
-				$result['trs']=ceil((10*$result['dist'])/$factor);
+				$result['vel']=$factor;
+				$result['trs']=ceil($result['dist']/$factor);
 				break;
 		}
-		$result['trs']=ceil($result['trs']); // redondeamos hacia arriba
+		// si estamos en una selectiva RSCE, y el factor es 0.0 _NO_ se redondea
+		$roundUp=true;
+		$t=$dmanga["TRS_{$suffix}_Factor"];
+		if ( ($this->getDatosPrueba()->Selectiva==1) && ($t==0)) $roundUp=false;
+		// si el trs esta especificado con decimales, tampoco se redondea
+		if ( $t - (int)$t != 0) $roundUp=false;
+		// en caso de tener que redondear hacia arriba, procedemos
+		if ($roundUp) $result['trs']=ceil($result['trs']); // redondeamos hacia arriba
 		// Evaluamos TRM
 		switch($dmanga["TRM_{$suffix}_Tipo"]) {
 			case 0: // TRM Fijo
@@ -209,7 +216,7 @@ class Resultados extends DBObject {
 				else $result['trm'] = $result['trs'] * ( (100.0+$dmanga["TRM_{$suffix}_Factor"]) / 100.0) ; // (+ X por ciento)
 				break;
 		}
-		$result['trm']=ceil($result['trm']); // redondeamos hacia arriba
+		if ($roundUp) $result['trm']=ceil($result['trm']); // redondeamos hacia arriba
 		if (! array_key_exists('vel',$result) ) {
 			// Finalmente, si no nos la han dado, evaluamos la velocidad de la ronda con dos decimales
 			$result['vel']= ($result['trs']==0)?0:/*'&asymp;'.*/number_format($result['dist']/$result['trs'],2);
@@ -337,18 +344,18 @@ class Resultados extends DBObject {
             // NOTA: el orden de estas comprobaciones es MUY importantee
             $djornada=$this->getDatosJornada();
             if ($djornada->Equipos4!=0) { // pruebas por equipos en modalidad de cuatro conjunta
-                if ($rehuses>=3) { $tiempo=0; $faltas=0; $tocados=0; $eliminado=1; $nopresentado=0;}
+                if ($rehuses>=3) { $tiempo=0; $tintermedio=0; $faltas=0; $tocados=0; $eliminado=1; $nopresentado=0;}
                 if ($tiempo>0) {$nopresentado=0;}
-                if ($eliminado==1) { $tiempo=0; $faltas=0; $tocados=0; $rehuses=0; $nopresentado=0; }
-                if ($nopresentado==1) { $tiempo=0; $eliminado=0; $faltas=0; $rehuses=0; $tocados=0; }
+                if ($eliminado==1) { $tiempo=0; $tintermedio=0; $faltas=0; $tocados=0; $rehuses=0; $nopresentado=0; }
+                if ($nopresentado==1) { $tiempo=0; $tintermedio=0; $eliminado=0; $faltas=0; $rehuses=0; $tocados=0; }
                 // en este tipo de pruebas, el tiempo puede ser cero, pues solo se le apunta al ultimo del equipo
                 // if ( ($tiempo==0) && ($eliminado==0)) { $nopresentado=1; $faltas=0; $rehuses=0; $tocados=0; }
                 if ( ($tiempo==0) && ($eliminado==1)) { $nopresentado=0; }
             } else { // pruebas "normales" y mangas ko
-                if ($rehuses>=3) { $tiempo=0; $eliminado=1; $nopresentado=0;}
+                if ($rehuses>=3) { $tiempo=0; $tintermedio=0; $eliminado=1; $nopresentado=0;}
                 if ($tiempo>0) {$nopresentado=0;}
-                if ($eliminado==1) { $tiempo=0; $nopresentado=0; }
-                if ($nopresentado==1) { $tiempo=0; $eliminado=0; $faltas=0; $rehuses=0; $tocados=0; }
+                if ($eliminado==1) { $tiempo=0; $tintermedio=0; $nopresentado=0; }
+                if ($nopresentado==1) { $tiempo=0; $tintermedio=0; $eliminado=0; $faltas=0; $rehuses=0; $tocados=0; }
                 if ( ($tiempo==0) && ($eliminado==0)) { $nopresentado=1; $faltas=0; $rehuses=0; $tocados=0; }
                 if ( ($tiempo==0) && ($eliminado==1)) { $nopresentado=0; }
             }
@@ -359,7 +366,7 @@ class Resultados extends DBObject {
 			SET Entrada='$entrada' , Comienzo='$comienzo' , 
 				Faltas=$faltas , Rehuses=$rehuses , Tocados=$tocados ,
 				NoPresentado=$nopresentado , Eliminado=$eliminado , 
-				Tiempo='$tiempo' , Observaciones='$observaciones' , Pendiente=$pendiente
+				Tiempo='$tiempo' , TIntermedio='$tintermedio' , Observaciones='$observaciones' , Pendiente=$pendiente
 			WHERE (Perro=$idperro) AND (Manga=$this->IDManga)";
 		$rs=$this->query($sql);
 		if (!$rs) return $this->error($this->conn->error);
@@ -436,8 +443,151 @@ class Resultados extends DBObject {
 	}
 
 	/**
+	 * Compone un array de tiempo/penalizaciones anyadiendo el perro que le indicamos
+     * Se utiliza para obtener el puesto de un perro cuando todavia NO ha sido insertado en la base de datos
+     * Si perro es null entonces no se anyade nada
+	 *@param {integer} $mode 0:L 1:M 2:S 3:MS 4:LMS 5:T 6:L+M 7:S+T 8 L+M+S+T
+	 *@param {array} { perro,faltas,tocados,rehuses,eliminado,nopresentado,tiempo }
+	 *@return {array} dog data with penal/time ordered
+	 */
+	function getPenalizaciones($mode,$perro=null) {
+		$this->myLogger->enter();
+		$idmanga=$this->IDManga;
+
+        // FASE 0: en funcion del tipo de recorrido y modo pedido
+        $idperro=0;
+        $where="(Manga=$idmanga) AND (Pendiente=0) ";
+        if ($perro!=null) {
+            $idperro=intval($perro['Perro']);
+            // ajustamos el criterio de busqueda de la tabla de resultados
+            $where="(Manga=$idmanga) AND (Pendiente=0) AND (Perro!=$idperro)";
+        }
+		$cat="";
+		switch ($mode) {
+			case 0: /* Large */		$cat= "AND (Categoria='L')"; break;
+			case 1: /* Medium */	$cat= "AND (Categoria='M')"; break;
+			case 2: /* Small */		$cat= "AND (Categoria='S')"; break;
+			case 3: /* Med+Small */ $cat= "AND ( (Categoria='M') OR (Categoria='S') )"; break;
+			case 4: /* L+M+S */ 	$cat= "AND ( (Categoria='L') OR (Categoria='M') OR (Categoria='S') )"; break;
+			case 5: /* Tiny */		$cat= "AND (Categoria='T')"; break;
+			case 6: /* L+M */		$cat= "AND ( (Categoria='L') OR (Categoria='M') )"; break;
+			case 7: /* S+T */		$cat= "AND ( (Categoria='S') OR (Categoria='T') )"; break;
+			case 8: /* L+M+S+T */	break; // no check categoria
+			default: return $this->error("modo de recorrido desconocido:$mode");
+		}
+		// FASE 1: recogemos resultados ordenados por precorrido y tiempo
+		$res=$this->__select(
+			"Perro,	( 5*Faltas + 5*Rehuses + 5*Tocados + 100*Eliminado + 200*NoPresentado ) AS PRecorrido, Tiempo, 0 AS PTiempo, 0 AS Penalizacion",
+			"Resultados",
+			"$where $cat",
+			" PRecorrido ASC, Tiempo ASC",
+			"");
+		if (!is_array($res)){
+			$this->myLogger->leave();
+			return $this->error($this->conn->error);
+		}
+		$table=&$res['rows']; // reference copy to economize memory and time
+		$size=$res['total'];
+
+		// FASE 2: si es necesario insertamos datos de nuestro perro.
+		// Dado que el array anterior ya esta ordenado,el metodo mas rapido es el de insercion directa
+        if ($idperro!=0) {
+            $myPerro=array(
+                'Perro' => $idperro,
+                'Tiempo' => $perro['Tiempo'],
+                'PRecorrido' => 5*$perro['Faltas'] + 5*$perro['Rehuses'] + 5*$perro['Tocados'] + 100*$perro['Eliminado'] + 200*$perro['NoPresentado'],
+                'PTiempo' => 0.0,
+                'Penalizacion' => 0.0,
+            );
+			// on empty table directly insert perro
+			if ($size==0) {
+				array_push($table,$myPerro);
+				$size++;
+			} else {
+				for ($n=0;$n<$size;$n++) {
+					if ($table[$n]['PRecorrido']<$myPerro['PRecorrido']) continue;
+					if ($table[$n]['PRecorrido']==$myPerro['PRecorrido']) {
+						if ($table[$n]['Tiempo']<$myPerro['Tiempo']) continue;
+					}
+					// arriving here means need to insert $myPerro at index $n
+					array_splice( $table, $n, 0, array($myPerro) ); // notice the "array(myPerro)" closure to preserva myPerro as a single element
+					$size++;
+					break;
+				}
+				if ($n>=$size) { // perro at last position. insert. Notice that Elim/NP should not arrive here as method not invoked
+					array_push($table,$myPerro);
+					$size++;
+				}
+			}
+        }
+
+		// FASE 3: evaluamos TRS Y TRM
+		$tdata=$this->evalTRS($mode,$table); // array( 'dist' 'obst' 'trs' 'trm', 'vel')
+		$trs=$tdata['trs'];
+		$trm=$tdata['trm'];
+
+		// FASE 4: añadimos ptiempo, penalizacion total
+		for ($idx=0;$idx<$size;$idx++ ){
+			if ($trs==0) {
+				// si TRS==0 no hay penalizacion por tiempo
+				$table[$idx]['PTiempo']		= 	0.0;
+				$table[$idx]['Penalizacion']=	$table[$idx]['PRecorrido'];
+			} else {
+				// evaluamos penalizacion por tiempo y penalizacion final
+				if ($table[$idx]['Tiempo']<$trs) { // Por debajo del TRS
+					$table[$idx]['PTiempo']		= 	0.0;
+					$table[$idx]['Penalizacion']=	$table[$idx]['PRecorrido'];
+				}
+				if ($table[$idx]['Tiempo']>=$trs) { // Superado TRS
+					$table[$idx]['PTiempo']		=	$table[$idx]['Tiempo'] 		-	$trs;
+					$table[$idx]['Penalizacion']=	floatval($table[$idx]['PRecorrido'])	+	$table[$idx]['PTiempo'];
+				}
+				if ($table[$idx]['Tiempo']>$trm) { // Superado TRM: eliminado
+					$table[$idx]['Penalizacion']=	100.0;
+				}
+			}
+		}
+		// FASE 4: re-ordenamos los datos en base a la puntuacion y calculamos campo "Puesto"
+		usort($table, function($a, $b) {
+			if ( $a['Penalizacion'] == $b['Penalizacion'] )	return ($a['Tiempo'] > $b['Tiempo'])? 1:-1;
+			return ( $a['Penalizacion'] > $b['Penalizacion'])?1:-1;
+		});
+
+		// FASE 5 finalmente componemos datos del array a retornar
+		$result=array(
+			'rows' => $table,
+			'total' => count($table),
+			'manga' => $this->getDatosManga(),
+			'trs' => $tdata
+		);
+		$this->myLogger->leave();
+		return $result;
+	}
+
+    /**
+     * Obtiene el puesto de un perro cuando todavia NO ha sido insertado en la base de datos
+     *@param {integer} $mode 0:L 1:M 2:S 3:MS 4:LMS 5:T 6:L+M 7:S+T 8 L+M+S+T
+     *@param {array} { perro,faltas,tocados,rehuses,eliminado,nopresentado,tiempo }
+     *@return {array} dog data with penal/time ordered
+     */
+	function getPuesto($mode,$perro) {
+		$res=$this->getPenalizaciones($mode,$perro);
+		if (!is_array($res)) return $res;
+		$table=$res['rows'];
+		$size=$res['total'];
+		$idperro=$perro['Perro'];
+		// FASE 5: buscamos el puesto en el que finalmente ha quedado $myPerro y lo retornamos
+		for ($idx=0;$idx<$size;$idx++ ){
+			if ($table[$idx]['Perro']!=$idperro) continue;
+			return array( 'success'=>true,'puesto'=>(1+$idx),'penalizacion'=>$table[$idx]['Penalizacion']);
+		}
+		//arriving here means error: perro not found
+		return $this->error("Perro:$idperro not found in resultados::getPuesto()");
+	}
+
+	/**
 	 * Presenta una tabla ordenada segun los resultados de la manga
-	 *@param {integer} $mode 0:L 1:M 2:S 3:MS 4:LMS.
+	 *@param {integer} $mode 0:L 1:M 2:S 3:MS 4:LMS 5:T 6:L+M 7:S+T 8 L+M+S+T
 	 *@return {array} requested data or error
 	 */
 	function getResultados($mode) {
@@ -469,10 +619,12 @@ class Resultados extends DBObject {
 				"$where $cat",
 				" PRecorrido ASC, Tiempo ASC", 
 				"");
-		if (!is_array($res))
+		if (!is_array($res)){
+			$this->myLogger->leave();
 			return $this->error($this->conn->error);
+		}
+
 		$table=$res['rows'];
-		$this->myLogger->leave();
 		// FASE 2: evaluamos TRS Y TRM
 		$tdata=$this->evalTRS($mode,$table); // array( 'dist' 'obst' 'trs' 'trm', 'vel')
 		$res['trs']=$tdata; // store trs data into result
@@ -511,7 +663,7 @@ class Resultados extends DBObject {
 
             // anyadimos nombre del equipo
             $dequipos=$this->getDatosEquipos();
-            $eqinfo=$dequipos[]=$dequipos[$table[$idx]['Equipo']];
+            $eqinfo=$dequipos[$table[$idx]['Equipo']];
             $table[$idx]['NombreEquipo']=$eqinfo['Nombre'];
             // anyadimos logotipo del club
             $table[$idx]['LogoClub']=$clubes->getLogoName('NombreClub',$table[$idx]['NombreClub']);
@@ -546,7 +698,7 @@ class Resultados extends DBObject {
             $table[$idx]['Pcat']=$puestocat[$cat];
 
 			// la calificacion depende de categoria, grado y federacion
-			$fed->evalPartialCalification($this->getDatosPrueba(),$this->getDatosJornada(),$table,$table[$idx],$puestocat);
+			$fed->evalPartialCalification($this->getDatosPrueba(),$this->getDatosJornada(),$this->getDatosManga(),$table[$idx],$puestocat);
 		}
 
         // componemos datos del array a retornar
@@ -570,10 +722,10 @@ class Resultados extends DBObject {
      * @param {array} resultados de la manga ordenados por participante
      * @param {int} prueba PruebaID
      * @param {int} jornada JornadaID
-     * @param {int} $tmode 3 o 4
+     * @param {int} $mindogs minimun number of dogs on a team
      * @return {array} datos de equipos de la manga ordenados por resultados de equipo
      */
-    static function getTeamResults($resultados,$prueba,$jornada,$tmode=3) {
+    static function getTeamResults($resultados,$prueba,$jornada,$mindogs=4) {
         // Datos de equipos de la jornada. obtenemos prueba y jornada del primer elemento del array
         $m=new Equipos("getTeamResults",$prueba,$jornada);
         $teams=$m->getTeamsByJornada();
@@ -593,23 +745,24 @@ class Resultados extends DBObject {
             $equipo=&$equipos[$teamid];
             array_push($equipo['Resultados'],$result);
             // suma el tiempo y penalizaciones de los tres/cuatro primeros
-            if (count($equipo['Resultados'])<=$tmode) {
+            if (count($equipo['Resultados'])<=$mindogs) {
                 $equipo['Tiempo']+=floatval($result['Tiempo']);
                 $equipo['Penalizacion']+=floatval($result['Penalizacion']);
             }
         }
 
-        // rastrea los equipos con menos de tres participantes y marca los que faltan
+        // rastrea los equipos con menos de $mindogs participantes y marca los que faltan
         // no presentados
         $teams=array();
         foreach($equipos as &$equipo) {
             switch(count($equipo['Resultados'])){
                 case 0: continue; // ignore team
-                case 1: $equipo['Penalizacion']+=200.0; // add pending "No presentado"
+					break;
+                case 1: $equipo['Penalizacion']+=400.0; // required team member undeclared
                 // no break
-                case 2: $equipo['Penalizacion']+=200.0; // add pending "No presentado"
+                case 2: if ($mindogs==3) $equipo['Penalizacion']+=400.0; // required team member undeclared
                 // no break;
-                case 3: if ($tmode==4) $equipo['Penalizacion']+=200.0; // add pending "No presentado"
+                case 3: if ($mindogs==4) $equipo['Penalizacion']+=400.0; // required team member undeclared
                 // no break;
                 case 4:
                     array_push($teams,$equipo); // add team to result to remove unused/empty teams
@@ -627,8 +780,5 @@ class Resultados extends DBObject {
         });
         return $teams;
     }
-
-
-
 }
 ?>

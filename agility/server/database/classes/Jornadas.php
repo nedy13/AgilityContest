@@ -2,7 +2,7 @@
 /*
 Jornadas.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -36,7 +36,10 @@ class Jornadas extends DBObject {
 		/* 8 */ array(128,	'Equipos ( 4 conjunta )'),
 		/* 9 */ array(256,	'Ronda K.O.'),
 		/*10 */ array(512,	'Manga especial'),
-		/*11 */ array(24,	'Grado II y III conjunta')
+		/*11 */ array(24,	'Grado II y III conjunta'),
+		/*12 */ array(1024,	'Equipos ( 2 mejores )'),
+		/*13 */ array(2048,	'Equipos ( 2 conjunta )'),
+		/*14 */ array(4096,	'Equipos ( 3 conjunta )')
 	);
 	
 	protected $prueba; // id de prueba
@@ -276,8 +279,8 @@ class Jornadas extends DBObject {
         $j=$this->__getObject("Jornadas",$id);
         if (intval($perms)!=0) $res=$am->allowed($perms); // check against user provided check access
         // else check against jornada-dependent access permissions
-        else if (intval($j->Equipos3)!=0) $res=$am->allowed(ENABLE_TEAM3);
-        else if (intval($j->Equipos4)!=0) $res=$am->allowed(ENABLE_TEAM4);
+        else if (intval($j->Equipos3)!=0) $res=$am->allowed(ENABLE_TEAMS);
+        else if (intval($j->Equipos4)!=0) $res=$am->allowed(ENABLE_TEAMS);
         else if (intval($j->KO)!=0) $res=$am->allowed(ENABLE_KO);
         else $res=true;
         if (!$res) {
@@ -419,11 +422,17 @@ class Jornadas extends DBObject {
 									) );
 		}
 		if ($row->Equipos3!=0) {
+			switch($row->Equipos3) {
+				case 1: /* 3 best of 4 (compatibility mode)  */ $idx=7; break;
+				case 2: /* 2 best of 3	*/ $idx=12; break;
+				case 3: /* 3 best of 4  */ $idx=7; break;
+				default: $idx=7; break;
+			}
 			$manga1= $this->fetchManga($mangas['rows'],$jornadaid,8); // 'Agility Equipos (3 mejores)'
 			$manga2= $this->fetchManga($mangas['rows'],$jornadaid,13); // 'Jumping Equipos (3 mejores)'
 			array_push($data,array( 
-									"Rondas" => Jornadas::$tipo_ronda[7][0],
-									"Nombre" => Jornadas::$tipo_ronda[7][1], 
+									"Rondas" => Jornadas::$tipo_ronda[$idx][0],
+									"Nombre" => Jornadas::$tipo_ronda[$idx][1],
 									"Manga1" => $manga1['ID'],
 									"Manga2" => $manga2['ID'],
 									"NombreManga1" => 'Agility Eq.',
@@ -437,11 +446,18 @@ class Jornadas extends DBObject {
 									) );
 		}
 		if ($row->Equipos4!=0) {
+			switch($row->Equipos4) {
+				case 1: /* 4 combined (compatibility mode)  */ $idx=8; break;
+				case 2: /* 2 combined	*/ $idx=12; break;
+				case 3: /* 3 combined  */ $idx=13; break;
+				case 4: /* 4 combined  */ $idx=8; break;
+				default: $idx=8; break;
+			}
 			$manga1= $this->fetchManga($mangas['rows'],$jornadaid,9); // 'Agility Equipos (conjunta)'
 			$manga2= $this->fetchManga($mangas['rows'],$jornadaid,14); // 'Jumping Equipos (conjunta)'
 			array_push($data,array( 
-									"Rondas" => Jornadas::$tipo_ronda[8][0],
-									"Nombre" => Jornadas::$tipo_ronda[8][1],
+									"Rondas" => Jornadas::$tipo_ronda[$idx][0],
+									"Nombre" => Jornadas::$tipo_ronda[$idx][1],
 									"Manga1" => $manga1['ID'],
 									"Manga2" => $manga2['ID'],
 									"NombreManga1" => 'Agility Eq.',
@@ -473,6 +489,7 @@ class Jornadas extends DBObject {
 									) );
 		}
 		if ($row->Especial!=0) {
+			// TODO: $row->Special should indicante number of rounds. Current and default is 1
 			$manga1= $this->fetchManga($mangas['rows'],$jornadaid,16); // 'Manga especial'
 			$manga2= null;
 			array_push($data,array( 
@@ -581,6 +598,7 @@ class Jornadas extends DBObject {
 			'Nombre'=> Jornadas::$tipo_ronda[$t][1]." - ".Mangas::$manga_modes[$m][0],
 			'Recorrido'=>$r,
 			'Mode'=>$m,
+			'Categoria'=>Mangas::$manga_modes[$m][1], // list of affected categories
 			'Manga1'=>$m1['ID'],
 			'Manga2'=>($m2!==null)?$m2['ID']:0,
 			'NombreManga1'=>Mangas::$tipo_manga[$m1['Tipo']][1],
@@ -590,7 +608,7 @@ class Jornadas extends DBObject {
 
 	static function __compose(&$data,$prueba,$jornadaid,$tiporonda,$m1,$m2){
 		$heights=intval(Federations::getFederation( intval($prueba['RSCE']) )->get('Heights'));
-		switch($m1['Recorrido']){
+		switch(intval($m1['Recorrido'])){ // should be the same than $m2['Recorrido']
 			case 0: // separado
 				array_push($data,Jornadas::__composeArray($prueba['ID'],$jornadaid,$tiporonda,$m1['Recorrido'],0,$m1,$m2)); // large
 				array_push($data,Jornadas::__composeArray($prueba['ID'],$jornadaid,$tiporonda,$m1['Recorrido'],1,$m1,$m2)); // medium
@@ -624,9 +642,6 @@ class Jornadas extends DBObject {
 	 * @return array|null
 	 */
 	static function enumerateRondasByJornada($jornadaid) {
-
-
-
 		if ($jornadaid<=0) { // no jornada id provided
 			return array('total'=>0,'rows'=>array());
 		}
@@ -635,19 +650,18 @@ class Jornadas extends DBObject {
 		$jornada=$dbobj->__getArray("Jornadas",$jornadaid);
 		$prueba=$dbobj->__getArray("pruebas",$jornada['Prueba']);
 		$mangas=$dbobj->__select("*","Mangas","(Jornada=$jornadaid)","TIPO ASC","")['rows'];
-		$heights=intval(Federations::getFederation( intval($prueba['RSCE']) )->get('Heights'));
 		$data=array();
 		if ($jornada['PreAgility2']!=0) {
 			// $dbobj->myLogger->trace("Procesando mangas de preagility-2");
 			/* Pre-Agility siempre tiene recorrido comun para todas las categorias */
 			$m1=Jornadas::__searchManga(1,$mangas); // PA-1
 			$m2=Jornadas::__searchManga(2,$mangas); // PA-2
-			array_push($data,Jornadas::__composeArray($prueba['ID'],$jornadaid,2,$m1['Recorrido'],($heights==3)?4:8,$m1,$m2));
+			Jornadas::__compose($data, $prueba, $jornadaid, 2, $m1, $m2);
 		} else if ($jornada['PreAgility']!=0) {
 			// $dbobj->myLogger->trace("Procesando mangas de preagility-1");
 			/* Pre-Agility siempre tiene recorrido comun para todas las categorias */
 			$m1=Jornadas::__searchManga(1,$mangas); // PA-1
-			array_push($data,Jornadas::__composeArray($prueba['ID'],$jornadaid,1,$m1['Recorrido'],($heights==3)?4:8,$m1,null));
+			Jornadas::__compose($data, $prueba, $jornadaid, 1, $m1, null);
 		}
 		if ($jornada['Grado1']!=0) {  // Jornadas::tiporonda=3
 			$m1 = Jornadas::__searchManga(3, $mangas); // Agility 1 Grado I
@@ -689,7 +703,6 @@ class Jornadas extends DBObject {
 			Jornadas::__compose($data,$prueba,$jornadaid,10,$m1,null);
 		}
 		// TODO: evaluate conjuntas Grado II y III
-
 		$result=array('total'=>count($data),'rows'=>$data);
 		return $result;
 	}

@@ -3,7 +3,7 @@
 /*
 userFunctions.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -27,6 +27,7 @@ require_once(__DIR__."/tools.php");
 require_once(__DIR__."/auth/Config.php");
 require_once(__DIR__."/auth/AuthManager.php");
 require_once(__DIR__."/database/classes/DBObject.php");
+require_once(__DIR__."/printer/RawPrinter.php");
 
 class Admin extends DBObject {
 	protected $myConfig;
@@ -106,7 +107,7 @@ class Admin extends DBObject {
 		$dbhost=$this->dbhost;
 		$dbuser=$this->dbuser;
 		$dbpass=$this->dbpass;
-		
+		set_time_limit(0); // some windozes are too slow dumping databases
 		$cmd="mysqldump"; // unix
 		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 			$path=str_replace("\\apache\\bin\\httpd.exe","",PHP_BINARY);
@@ -238,14 +239,16 @@ class Admin extends DBObject {
 	public function restore() {
         // we need root database access to re-create tables
         $rconn=DBConnection::getRootConnection();
-        if ($rconn->connect_error) throw new Exception("Cannot perform upgrade process: database::dbConnect()");
+        if ($rconn->connect_error)
+			throw new Exception("Cannot perform upgrade process: database::dbConnect()");
 		session_start();
 		unset($_SESSION['progress']);
 		session_write_close();
 		// phase 1: retrieve file from http request
         $data=$this->retrieveDBFile();
         // phase 2: verify received file
-		// TODO: make sure that this is a correct AgilityContest Database file
+		if (strpos(substr($data,0,25),"-- AgilityContest")===FALSE)
+			throw new Exception("Provided file is not an AgilityContest backup file");
         // phase 3: delete all tables and structures from database
         $this->dropAllTables($rconn);
         // phase 4: parse sql file and populate tables into database
@@ -328,8 +331,21 @@ try {
 			$result=$am->getRegistrationInfo(); if ($result==null) $adm->errormsg="Cannot retrieve license information"; break;
 		case "register":
 			$am->access(PERMS_ADMIN); $result=$am->registerApp(); if ($result==null) $adm->errormsg="Cannot import license data"; break;
-		case "loadConfig": 
-			$config=Config::getInstance(); $result=$config->loadConfig(); break;
+		case "loadConfig": // send configuration to browser
+			$config=Config::getInstance();
+			$result=$config->loadConfig();
+			break;
+		case "backupConfig": // generate and download a "config.ini" file
+			$config=Config::getInstance();
+			$result=$config->backupConfig();
+			break;
+		case "restoreConfig": // receive, analyze and save configuration from file
+			$am->access(PERMS_ADMIN);
+			$config=Config::getInstance();
+			$result=$config->RestoreConfig();
+			$ev=new Eventos("RestoreConfig",1,$am);
+			$ev->reconfigure();
+			break;
 		case "saveConfig": 
 			$am->access(PERMS_ADMIN);
 			$config=Config::getInstance();
@@ -344,7 +360,15 @@ try {
 			$ev=new Eventos("DefaultConfig",1,$am);
 			$ev->reconfigure();
 			break;
-		default: 
+		case "printerCheck":
+			$am->access(PERMS_OPERATOR);
+			$config=Config::getInstance();
+			$pname=http_request("event_printer","s","");
+			$pwide=http_request("wide_printer","i",-1);
+			$printer=new RawPrinter($pname,$pwide);
+			$printer->rawprinter_check();
+			break;
+		default:
 			throw new Exception("adminFunctions:: invalid operation: '$operation' provided");
 	}
 	if ($result===null)	throw new Exception($adm->errormsg); // error

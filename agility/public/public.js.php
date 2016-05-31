@@ -1,7 +1,7 @@
 /*
 public.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -21,18 +21,6 @@ require_once(__DIR__."/../server/tools.php");
 require_once(__DIR__."/../server/auth/Config.php");
 $config =Config::getInstance();
 ?>
-/**
- * Presenta el logo en pantalla
- * @param {int} val nombre delo logo
- * @param {Object} row datos de la fila
- * @param {int} idx indice de la fila
- * @returns {string} texto html a imprimir
- */
-function formatLogoPublic(val,row,idx) {
-    // TODO: no idea why idx:0 has no logo declared
-    if (typeof(val)==='undefined') return '<img height="30" alt="empty.png" src="/agility/images/logos/empty.png"/>';
-    return '<img height="30" alt="'+val+'" src="/agility/images/logos/'+val+'"/>';
-}
 
 /**
  * Obtiene la informacion de la prueba para cabecera y pie de pagina
@@ -41,7 +29,7 @@ function pb_getHeaderInfo() {
     $.ajax( {
         type: "GET",
         dataType: 'json',
-        url: "/agility/server/web/public.php",
+        url: "/agility/server/web/publicFunctions.php",
         data: {
             Operation: 'infodata',
             Prueba: workingData.prueba,
@@ -76,19 +64,23 @@ function pb_setFooterInfo() {
     });
 }
 
-/**
- * Imprime el orden de salida de la prueba y jornada seleccionada por el usuario
- */
-function pb_updateOrdenSalida() {
-    var row=$('#pb_enumerateMangas').combogrid('grid').datagrid('getSelected');
-    if (!row) return;
+function pb_updateOrdenSalida2(id) {
     $('#pb_ordensalida-datagrid').datagrid('reload',{
         Operation: 'getDataByTanda',
         Prueba: workingData.prueba,
         Jornada: workingData.jornada,
         Sesion: 1, // defaults to "-- sin asignar --"
-        ID:  row.ID // Tanda ID
+        ID:  id // Tanda ID
     });
+}
+
+/**
+ * Imprime el orden de salida de la prueba y jornada seleccionada por el usuario
+ * ejecutada desde la ventana con combogrid
+ */
+function pb_updateOrdenSalida() {
+    var row=$('#pb_enumerateMangas').combogrid('grid').datagrid('getSelected');
+    if (row) pb_updateOrdenSalida2(row.ID);
 }
 
 /**
@@ -124,108 +116,4 @@ function pb_updatePrograma() {
         Jornada: workingData.jornada,
         Sesion: 0 // Set Session ID to 0 to include everything
     });
-}
-
-/**
- * Actualiza los datos de TRS y TRM de la fila especificada
- * Rellena tambien el datagrid de resultados parciales
- */
-function pb_updateParciales() {
-    // obtenemos la manga seleccionada. if no selection return
-    var row=$('#pb_enumerateParciales').combogrid('grid').datagrid('getSelected');
-    if (!row) return;
-    workingData.teamCounter=1; // reset team's puesto counter
-    workingData.manga=row.Manga;
-    workingData.datosManga=row;
-    workingData.tanda=0; // fake tanda. use manga+mode to evaluate results
-    workingData.mode=row.Mode;
-    // en lugar de invocar al datagrid, lo que vamos a hacer es
-    // una peticion ajax, para obtener a la vez los datos tecnicos de la manga
-    // y de los jueces
-    $.ajax({
-        type:'GET',
-        url:"/agility/server/database/resultadosFunctions.php",
-        dataType:'json',
-        data: {
-            Operation:	'getResultados',
-            Prueba:		row.Prueba,
-            Jornada:	row.Jornada,
-            Manga:		row.Manga,
-            Mode:       row.Mode
-        },
-        success: function(dat) {
-            // informacion de la manga
-            $('#pb_parciales-NombreManga').text(row.Nombre);
-            $('#pb_parciales-Juez1').text((dat['manga'].Juez1<=1)?"":'<?php _e('Judge');?> 1: ' + dat['manga'].NombreJuez1);
-            $('#pb_parciales-Juez2').text((dat['manga'].Juez2<=1)?"":'<?php _e('Judge');?> 2: ' + dat['manga'].NombreJuez2);
-            // datos de TRS
-            $('#pb_parciales-Distancia').text('<?php _e('Distance');?>: ' + dat['trs'].dist + 'm.');
-            $('#pb_parciales-Obstaculos').text('<?php _e('Obstacles');?>: ' + dat['trs'].obst);
-            $('#pb_parciales-TRS').text('<?php _e('Standard C. Time');?>: ' + dat['trs'].trs + 's.');
-            $('#pb_parciales-TRM').text('<?php _e('Maximum C. Time');?>: ' + dat['trs'].trm + 's.');
-            $('#pb_parciales-Velocidad').text('<?php _e('Speed');?>: ' + dat['trs'].vel + 'm/s');
-            // actualizar datagrid
-            $('#pb_parciales-datagrid').datagrid('loadData',dat);
-        }
-    });
-}
-
-/**
- * Actualiza datos de la clasificacion general
- */
-function pb_updateFinales() {
-	var ronda=$('#pb_enumerateFinales').combogrid('grid').datagrid('getSelected');
-	if (ronda==null) {
-    	// $.messager.alert("Error:","!No ha seleccionado ninguna ronda de esta jornada!","warning");
-    	return; // no way to know which ronda is selected
-	}
-    workingData.teamCounter=1; // reset team's puesto counter
-    // do not call pb_doResults cause expected json data
-	$.ajax({
-		type:'GET',
-		url:"/agility/server/database/clasificacionesFunctions.php",
-		dataType:'json',
-		data: {	
-			Prueba:	ronda.Prueba,
-			Jornada:ronda.Jornada,
-			Manga1:	ronda.Manga1,
-			Manga2:	ronda.Manga2,
-			Rondas: ronda.Rondas,
-			Mode: 	ronda.Mode
-		},
-		success: function(dat) {
-            // nombres de las mangas
-            $('#pb_finales-NombreRonda').html(ronda.Nombre);
-            $('#pb_resultados_thead_m1').html(ronda.NombreManga1);
-            $('#pb_resultados_thead_m2').html(ronda.NombreManga2);
-            // datos de los jueces
-            $('#pb_finales-Juez1').html((dat['jueces'][0]=="-- Sin asignar --")?"":'<?php _e('Judge');?> 1: ' + dat['jueces'][0]);
-            $('#pb_finales-Juez2').html((dat['jueces'][1]=="-- Sin asignar --")?"":'<?php _e('Judge');?> 2: ' + dat['jueces'][1]);
-            // datos de trs manga 1
-            $('#pb_finales-Ronda1').html(ronda.NombreManga1);
-            $('#pb_finales-Distancia1').html('<?php _e('Distance');?>: ' + dat['trs1'].dist + 'm.');
-            $('#pb_finales-Obstaculos1').html('<?php _e('Obstacles');?>: ' + dat['trs1'].obst);
-            $('#pb_finales-TRS1').html('<?php _e('Standard C. Time');?>: ' + dat['trs1'].trs + 's.');
-            $('#pb_finales-TRM1').html('<?php _e('Maximum C. Time');?>: ' + dat['trs1'].trm + 's.');
-            $('#pb_finales-Velocidad1').html('<?php _e('Speed');?>: ' + dat['trs1'].vel + 'm/s');
-            // datos de trs manga 2
-            if (ronda.Manga2==0) { // single round
-                $('#pb_finales-Ronda2').html("");
-                $('#pb_finales-Distancia2').html("");
-                $('#pb_finales-Obstaculos2').html("");
-                $('#pb_finales-TRS2').html("");
-                $('#pb_finales-TRM2').html("");
-                $('#pb_finales-Velocidad2').html("");
-            } else {
-                $('#pb_finales-Ronda2').html(ronda.NombreManga2);
-                $('#pb_finales-Distancia2').html('<?php _e('Distance');?>: ' + dat['trs2'].dist + 'm.');
-                $('#pb_finales-Obstaculos2').html('<?php _e('Obstacles');?>: ' + dat['trs2'].obst);
-                $('#pb_finales-TRS2').html('<?php _e('Standard C. Time');?>: ' + dat['trs2'].trs + 's.');
-                $('#pb_finales-TRM2').html('<?php _e('Maximum C. Time');?>: ' + dat['trs2'].trm + 's.');
-                $('#pb_finales-Velocidad2').html('<?php _e('Speed');?>: ' + dat['trs2'].vel + 'm/s');
-            }
-            // clasificaciones
-            $('#pb_resultados-datagrid').datagrid('loadData',dat);
-		}
-	});
 }

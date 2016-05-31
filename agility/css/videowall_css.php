@@ -5,7 +5,7 @@ $config = Config::getInstance();
 /*
 videowall_css.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -22,61 +22,14 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 /*
 * Estilos asociados a las diversas pantallas de videomarcadores
 */
-/********** Estilos de la pantalla liveStream *****************/
-#vwls_common {
-    vertical-align: middle;
-    /*line-height: 25px; */
-    font-weight: bold;
-    border: none;
-    border-width: 0px;
-    z-index: 1;
-}
-
-/* datos de informacion del perro */
-.vwls_label {
-    text-align: left;
-    background-color: transparent;
-    color: white;
-}
-
-/* labels de F/T/R */
-.vwls_dlabel {
-    text-align: left;
-    background-color: transparent;
-    color: white;
-}
-
-/* datos de tiempo */
-.vwls_dtime {
-    text-align: center;
-    background-color: transparent;
-    color: white;
-}
-
-/* datos de F/T/R */
-.vwls_data {
-    text-align: center;
-    color: white;
-}
-
-.vwls_logo {
-    background-color: transparent;
-}
-
-
-.vwls_fondo {
-    background-color: rgba(127,127,127,<?php echo $config->getEnv('vw_alpha')?>);
-    border: 3px solid black;
-    border-radius: 10px;
-}
-
-#vwls_video {
-    width: 100%;
-    height: auto;
-    z-index: -1;
-}
 
 /**********  cabeceras flotante para videomarcadores **********/
+
+.vws_theader {
+    /* font-style: italic; */
+    font-family: Arial Black;
+}
+
 .vw_floatingheader {
     margin-top:0px;
     margin-bottom:0px;
@@ -201,20 +154,17 @@ td.vw_club {
 }
 
 /************** datos de las tablas de clasificaciones por equipos */
+
 .vw_equipos3 {
     border-width:0px;
-    table-layout:fixed;
-    width:1000px;
-    overflow:hidden;
-    white-space:nowrap;
+    padding-top:0px;
+    background-color: <?php echo $config->getEnv('vw_hdrbg3')?>;
+    color: <?php echo $config->getEnv('vw_hdrfg3')?>;
 }
 
 .vw_equipos3 span {
-    display:inline-block;
-    padding-right: -5px;
-    text-align:right;
     vertical-align:top;
-    width:20%;
+    display:inline-block;
 }
 
 /************* estilos de la tabla de inscripciones por equipos */

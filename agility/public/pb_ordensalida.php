@@ -12,7 +12,7 @@ if ( ! $am->allowed(ENABLE_PUBLIC)) { include_once("unregistered.php"); return 0
 <!--
 pb_ordensalida.inc
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -29,7 +29,20 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 <!-- Presentacion del orden de salida de la jornada -->
 <div id="pb_ordensalida-window">
 	<div id="pb_ordensalida-layout" style="width:100%">
-		<div id="pb_ordensalida-Cabecera" data-options="region:'north',split:false" style="height:80px" class="pb_floatingheader">
+		<div id="pb_ordensalida-Cabecera" style="height:15%;" class="pb_floatingheader"
+             data-options="
+                region:'north',
+                split:true,
+                title:'<?php _e('Round selection');?>',
+                collapsed:false,
+                onCollapse:function(){
+                	setTimeout(function(){
+				    	var top = $('#pb_ordensalida-layout').layout('panel','expandNorth');
+				    	var round = $('#pb_enumerateMangas').combogrid('getText');
+					    top.panel('setTitle','<?php _e('Starting order');?>: '+round);
+				    },0);
+                }
+                ">
             <a id="pb_header-link" class="easyui-linkbutton" onClick="pb_updateOrdenSalida();" href="#" style="float:left">
                 <img id="pb_header-logo" src="/agility/images/logos/agilitycontest.png" width="50" />
             </a>
@@ -40,16 +53,25 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
                 <select id="pb_enumerateMangas" style="width:200px"></select>
             </span>
 		</div>
-		<div id="pb_tabla" data-options="region:'center'">
+		<div id="team_table" data-options="region:'center'">
 			<table id="pb_ordensalida-datagrid"></table>
 		</div>
-        <div id="pb_ordensalida-footer" data-options="region:'south',split:false" class="pb_floatingfooter">
+        <div id="pb_ordensalida-footer" data-options="region:'south',split:false" style="height:10%;" class="pb_floatingfooter">
             <span id="pb_footer-footerData"></span>
         </div>
 	</div>
 </div> <!-- pb_ordensalida-window -->
 
 <script type="text/javascript">
+
+// fire autorefresh if configured
+var rtime=parseInt(ac_config.web_refreshtime);
+if (rtime!=0) setInterval(pb_updateOrdenSalida,1000*rtime);
+
+// in a mobile device, increase north window height
+if (isMobileDevice()) {
+    $('#pb_ordensalida-Cabecera').css('height','90%');
+}
 
 addTooltip($('#pb_header-link').linkbutton(),'<?php _e("Update starting order"); ?>');
 $('#pb_ordensalida-layout').layout({fit:true});
@@ -114,6 +136,7 @@ $('#pb_enumerateMangas').combogrid({
             Sesion: 1, // defaults to "-- sin asignar --"
             ID:  row.ID // Tanda ID
         });
+        $('#pb_ordensalida-layout').layout('collapse','north');
     }
 });
 
@@ -146,7 +169,7 @@ $('#pb_ordensalida-datagrid').datagrid({
         { field:'Pendiente',	width:0, hidden:true },
         { field:'Tanda',		width:0, hidden:true },
         { field:'Equipo',		width:0, hidden:true },
-        { field:'Logo',     	width:'5%', align:'center',	title: '',formatter: formatLogoPublic },
+        { field:'LogoClub',     width:'5%', align:'center',	title: '',formatter: formatLogo },
         { field:'NombreEquipo',	width:'12%', align:'center',title: '<?php _e('Team'); ?>',hidden:true},
         { field:'Dorsal',		width:'5%', align:'center',	title: '<?php _e('Dorsal'); ?>', styler:checkPending },
         { field:'Nombre',		width:'15%', align:'center',title: '<?php _e('Name'); ?>',formatter: formatBoldBig},
@@ -154,8 +177,8 @@ $('#pb_ordensalida-datagrid').datagrid({
         { field:'Licencia',		width:'5%', align:'center',	title: '<?php _e('License'); ?>'},
         { field:'NombreGuia',	width:'23%', align:'right',	title: '<?php _e('Handler'); ?>' },
         { field:'NombreClub',	width:'19%', align:'right',	title: '<?php _e('Club'); ?>' },
-        { field:'Categoria',	width:'4%', align:'center',	title: '<?php _e('Cat'); ?>.' },
-        { field:'Grado',		width:'4%', align:'center',	title: '<?php _e('Grade'); ?>' },
+        { field:'Categoria',	width:'4%', align:'center',	title: '<?php _e('Cat'); ?>.',formatter:formatCategoria },
+        { field:'Grado',		width:'4%', align:'center',	title: '<?php _e('Grade'); ?>', formatter:formatGrado },
         { field:'Celo',			width:'4%', align:'center',	title: '<?php _e('Heat'); ?>', formatter:formatCelo },
         { field:'Observaciones',width:0, hidden:true }
     ]],

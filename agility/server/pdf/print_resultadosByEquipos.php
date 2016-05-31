@@ -2,7 +2,7 @@
 /*
 print_resultadosByManga.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -78,11 +78,24 @@ class ResultadosByEquipos3 extends PrintCommon {
 		$this->manga=$manga;
 		$this->resultados=$resultados;
         $this->mode=$mode;
-        $tmode=($this->jornada->Equipos3!=0)?3:4;
+        $mindogs=0;
+        switch(intval($this->jornada->Equipos3)) {
+            case 1:$mindogs=3; break; // old style 3 best of 4
+            case 2:$mindogs=2; break; // 2 besto of 3
+            case 3:$mindogs=3; break; // 3 best of 4
+            default: break;
+        }
+        switch(intval($this->jornada->Equipos4)) {
+            case 1:$mindogs=4; break; // old style 4 combined
+            case 2:$mindogs=2; break; // 2 combined
+            case 3:$mindogs=3; break; // 3 combined
+            case 4:$mindogs=4; break; // 4 combined
+            default: break;
+        }
         $this->cellHeader=
             array(_('Dorsal'),_('Name'),_('Lic').'.',_('Handler'),$this->strClub,_('Cat').'.',_('Flt').'.',_('Tch').'.',_('Ref').'.',
                   _('Time'),_('Vel').'.',_('Penal').'.',_('Calification'),_('Position'),_('Team global'));
-        $this->equipos=Resultados::getTeamResults($resultados['rows'],$prueba,$jornada,$tmode);
+        $this->equipos=Resultados::getTeamResults($resultados['rows'],$prueba,$jornada,$mindogs);
         $this->eqmgr=new Equipos("print_resultadosByEquipos",$prueba,$jornada);
 	}
 	
@@ -94,7 +107,7 @@ class ResultadosByEquipos3 extends PrintCommon {
 		// Si es la primera hoja pintamos datos tecnicos de la manga
 		if ($this->PageNo()!=1) return;
 
-		$this->SetFont('Helvetica','B',9); // bold 9px
+		$this->SetFont($this->getFontName(),'B',9); // bold 9px
 		$jobj=new Jueces("print_resultadosEquipos3");
 		$juez1=$jobj->selectByID($this->manga->Juez1);
 		$juez2=$jobj->selectByID($this->manga->Juez2);
@@ -127,12 +140,12 @@ class ResultadosByEquipos3 extends PrintCommon {
         // evaluate logos
         $logos=array('null.png','null.png','null.png','null.png');
         if ($team['Nombre']==="-- Sin asignar --") {
-            $logos[0]='agilitycontest.png';
+            $logos[0]=getIconPath($this->federation->get('Name'),"agilitycontest.png");
         } else {
             $miembros=$this->eqmgr->getPerrosByTeam($team['ID']);
             $count=0;
             for ($n=0;$n<count($miembros);$n++) {
-                $logo=getIconPath($this->federation->get('Name'),$miembros[$n]['Logo']);
+                $logo=getIconPath($this->federation->get('Name'),$miembros[$n]['LogoClub']);
                 if ( ( ! in_array($logo,$logos) ) && ($count<4) ) $logos[$count++]=$logo;
             }
         }
@@ -200,11 +213,11 @@ class ResultadosByEquipos3 extends PrintCommon {
                 $penal=number_format($row['Penalizacion'],$this->timeResolution);
 
                 // print row data
-                $this->SetFont('Helvetica','',8); // set data font size
+                $this->SetFont($this->getFontName(),'',8); // set data font size
                 $this->Cell($this->pos[0],5,$row['Dorsal'],			'LBR',	0,		$this->align[0],	true);
-                $this->SetFont('Helvetica','B',8); // mark Nombre as bold
+                $this->SetFont($this->getFontName(),'B',8); // mark Nombre as bold
                 $this->Cell($this->pos[1],5,$row['Nombre'],			'LBR',	0,		$this->align[1],	true);
-                $this->SetFont('Helvetica','',8); // set data font size
+                $this->SetFont($this->getFontName(),'',8); // set data font size
                 if ($this->pos[2]!=0) $this->Cell($this->pos[2],5,$row['Licencia'],		'LBR',	0,		$this->align[2],	true);
                 $this->Cell($this->pos[3],5,$row['NombreGuia'],		'LBR',	0,		$this->align[3],	true);
                 $this->Cell($this->pos[4],5,$row['NombreClub'],		'LBR',	0,		$this->align[4],	true);

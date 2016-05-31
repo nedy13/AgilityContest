@@ -2,7 +2,7 @@
 /*
 Eventos.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -35,29 +35,30 @@ class Eventos extends DBObject {
 		1	=> 'init',			// operator starts tablet application
 		2	=> 'login',			// operador hace login en el sistema
 		3	=> 'open',			// operator selects tanda on tablet
+		4	=> 'close',			// no more dogs in tanda
 		// eventos de crono manual
-		4	=> 'salida',		// juez da orden de salida ( crono 15 segundos )
-		5	=> 'start',			// Crono manual - value: timestamp
-		6	=> 'stop',			// Crono manual - value: timestamp
+		5	=> 'salida',		// juez da orden de salida ( crono 15 segundos )
+		6	=> 'start',			// Crono manual - value: timestamp
+		7	=> 'stop',			// Crono manual - value: timestamp
 		// eventos de crono electronico. Siempre llevan Value=timestamp como argumento
-		7	=> 'crono_start',	// Arranque Crono electronico
-		8	=> 'crono_restart',	// Paso de crono manual a crono electronico
-		9	=> 'crono_int',		// Tiempo intermedio Crono electronico
-		10	=> 'crono_stop',	// Parada Crono electronico
-		11 	=> 'crono_rec',		// Llamada a reconocimiento de pista
-		12  => 'crono_dat',     // Envio de Falta/Rehuse/Eliminado desde el crono
-		13  => 'crono_reset',	// puesta a cero del contador
-		14	=> 'crono_error',	// error en alineamiento de sensores
+		8	=> 'crono_start',	// Arranque Crono electronico
+		9	=> 'crono_restart',	// Paso de crono manual a crono electronico
+		10	=> 'crono_int',		// Tiempo intermedio Crono electronico
+		11	=> 'crono_stop',	// Parada Crono electronico
+		12 	=> 'crono_rec',		// Llamada a reconocimiento de pista
+		13  => 'crono_dat',     // Envio de Falta/Rehuse/Eliminado desde el crono
+		14  => 'crono_reset',	// puesta a cero del contador
+		15	=> 'crono_error',	// error en alineamiento de sensores
 		// entrada de datos, dato siguiente, cancelar operacion
-		15	=> 'llamada',		// operador abre panel de entrada de datos
-		16	=> 'datos',			// actualizar datos (si algun valor es -1 o nulo se debe ignorar)
-		17	=> 'aceptar',		// grabar datos finales
-		18	=> 'cancelar',		// restaurar datos originales
-        19  => 'info',           // value: message
+		16	=> 'llamada',		// operador abre panel de entrada de datos
+		17	=> 'datos',			// actualizar datos (si algun valor es -1 o nulo se debe ignorar)
+		18	=> 'aceptar',		// grabar datos finales
+		19	=> 'cancelar',		// restaurar datos originales
+        20  => 'info',           // value: message
 		// eventos de cambio de camara para videomarcadores
         // el campo data contiene la variable "Value" (url del stream ) y "mode" { mjpeg,h264,ogg,webm }
-		20	=> 'camera',		// cambio de fuente de streaming
-		21	=> 'reconfig'		// se ha cambiado la configuracion en el servidor
+		21	=> 'camera',		// cambio de fuente de streaming
+		22	=> 'reconfig'		// se ha cambiado la configuracion en el servidor
 	);
 	
 	protected $sessionID;
@@ -91,7 +92,7 @@ class Eventos extends DBObject {
      * @param {array} data dataset of key:value pairs to store in "data" field
 	 * @return {string} "" if ok; null on error
 	 */
-	function putEvent($data) {
+	function putEvent(&$data) {
 		$this->myLogger->enter();
 		$sid=$this->sessionID;
 		// si el evento es "init" y el flag reset_events está a 1 borramos el historico de eventos antes de reinsertar
@@ -105,7 +106,16 @@ class Eventos extends DBObject {
 			case 'null':			// null event: no action taken
 			case 'init':			// operator starts tablet application
 			case 'login':			// operador hace login en el sistema
+				break;
+			case 'info':           // user definded manga: no dogs
 			case 'open':			// operator selects tanda on tablet
+				$data['NombrePrueba']	= http_request('NombrePrueba',"s","");
+				$data['NombreJornada']	= http_request('NombreJornada',"s","");
+				$data['NombreManga']	= http_request('NombreManga',"s","");
+				$data['NombreRing']		= http_request('NombreRing',"s","");
+				// add additional parameters to event data
+				break;
+			case 'close':			// no more dogs in tanda
 				break;
 			// eventos de crono manual
 			case 'salida':			// juez da orden de salida ( crono 15 segundos )
@@ -128,10 +138,19 @@ class Eventos extends DBObject {
 				break;
 			// entrada de datos, dato siguiente, cancelar operacion
 			case 'llamada':		// operador abre panel de entrada de datos
+				// retrieve additional textual data
+				$data['Numero']		= http_request('Numero',"i",0);
+				$data['Nombre']		= http_request('Nombre',"s","");
+                $data['NombreLargo']= http_request('NombreLargo',"s","");
+                $data['NombreGuia']	= http_request('NombreGuia',"s","");
+                $data['NombreClub']	= http_request('NombreClub',"s","");
+                $data['NombreEquipo']=http_request('NombreEquipo',"s","");
+                $data['Categoria']	= http_request('Categoria',"s","-");
+                $data['Grado']		= http_request('Grado',"s","-");
+				break;
 			case 'datos':			// actualizar datos (si algun valor es -1 o nulo se debe ignorar)
 			case 'aceptar':		// grabar datos finales
 			case 'cancelar':		// restaurar datos originales
-			case 'info':           // value: message
 				break;
 			// eventos de cambio de camara para videomarcadores
 			// el campo data contiene la variable "Value" (url del stream ) y "mode" { mjpeg,h264,ogg,webm }
@@ -213,7 +232,7 @@ class Eventos extends DBObject {
      * @return array|null
      */
 	function getEvents($data) { 
-		$this->myLogger->enter();
+		// $this->myLogger->enter();
 		
 		// Close the session prematurely to avoid usleep() from locking other requests
 		// notice that cannot call http_request after this item
@@ -260,7 +279,7 @@ class Eventos extends DBObject {
 		}
 		// if no new events (timeout) create an empty result
 		if ($res===null) $res=array( 'total'=>0, 'rows'=>array(), 'TimeStamp' => $current );
-		$this->myLogger->leave();
+		// $this->myLogger->leave();
 		return $res;
 	}
 
@@ -271,8 +290,8 @@ class Eventos extends DBObject {
      * available events for session $data['Session'] with id greater than $data['ID']
      */
 	function listEvents($data) {
+		// $this->myLogger->enter();
 		if ($data['Session']<=0) return $this->error("No Session ID specified");
-		$this->myLogger->enter();
 		$extra="";
 		if ($data['Type']!=="") $extra=" AND ( Type = {$data['Type']} )";
 		$result=$this->__select(
@@ -282,7 +301,7 @@ class Eventos extends DBObject {
 				/* ORDER BY */ "ID",
 				/* LIMIT */ ""
 		);
-		$this->myLogger->leave();
+		//$this->myLogger->leave();
 		return $result;
 	}
 	

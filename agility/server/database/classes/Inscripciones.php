@@ -2,7 +2,7 @@
 /*
 Inscripciones.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -372,7 +372,7 @@ class Inscripciones extends DBObject {
                 /*select*/ "DISTINCT Resultados.Prueba,Resultados.Jornada, Resultados.Dorsal, Resultados.Perro,
                             Resultados.Nombre, PerroGuiaClub.NombreLargo, PerroGuiaClub.Genero, Resultados.Raza, Resultados.Licencia, Resultados.Categoria, Resultados.Grado,
                             Resultados.Celo,Resultados.NombreGuia,Resultados.NombreClub, Resultados.Equipo,
-                            PerroGuiaClub.Club AS Club, PerroGuiaClub.Guia AS Guia,PerroGuiaClub.LogoClub AS Logo,
+                            PerroGuiaClub.Club AS Club, PerroGuiaClub.Guia AS Guia,PerroGuiaClub.LogoClub AS LogoClub,
                             '$tname' AS NombreEquipo",
 				/* from */	"Resultados,PerroGuiaClub",
 				/* where */ "( PerroGuiaClub.ID = Resultados.Perro)	AND ( Resultados.Jornada={$teamobj->Jornada} ) AND ( Resultados.Equipo=$team )",
@@ -382,12 +382,37 @@ class Inscripciones extends DBObject {
         $this->myLogger->leave();
         return $lista;
 	}
-			
+
+	/*
+	 * Change dorsal number for provided dog
+	 * If dorsal is already assigned, swap dorsal with affected dog
+	 */
+	function setDorsal($perro,$curdorsal,$newdorsal){
+		$this->myLogger->enter();
+		if ( ($perro<=0) || ($newdorsal<=0))
+			return $this->error("setDorsal(): invalid dogID:$perro or dorsal:$newdorsal requested");
+		$this->myLogger->leave();
+		$cmds= array(
+			// preserve old dorsal if exists
+			"UPDATE Inscripciones SET Dorsal=0 WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal={$newdorsal} )",
+			"UPDATE Resultados SET Dorsal=0 WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal={$newdorsal} )",
+			// set new dorsal
+			"UPDATE Inscripciones SET Dorsal=$newdorsal WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal={$curdorsal} )",
+			"UPDATE Resultados SET Dorsal=$newdorsal WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal={$curdorsal} )",
+			// swap old dorsal
+			"UPDATE Inscripciones SET Dorsal=$curdorsal WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal=0 )",
+			"UPDATE Resultados SET Dorsal=$curdorsal WHERE ( Prueba={$this->pruebaID} )  AND ( Dorsal=0 )"
+		);
+		foreach ($cmds as $query) { $this->conn->query($query); }
+		return "";
+	}
+
 	/*
 	 * Reorder dorsales by mean of club,categoria,grado,nombre
 	 */
 	function reorder() {
 		$this->myLogger->enter();
+		$timeout=ini_get('max_execution_time');
 		// ordenamos los perros por club, categoria grado
 		$inscritos=$this->__select(
 				"Perro,Nombre,NombreClub,Categoria,Grado",
@@ -415,7 +440,9 @@ class Inscripciones extends DBObject {
 		$dorsal=1;
 		$len=count($inscritos['rows']);
 		
-		for($n=0;$n<$len;$n++,$dorsal++) { 
+		for($n=0;$n<$len;$n++,$dorsal++) {
+			// avoid php to be killed on very slow systems
+			set_time_limit($timeout);
 			// actualizamos las tabla de inscripciones y resultados
 			$dorsal1=$dorsal; $dorsal2=$dorsal;
 			$perro1=$inscritos['rows'][$n]['Perro']; $perro2=$perro1;

@@ -1,7 +1,7 @@
 <!-- 
 tablet_main.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -23,7 +23,7 @@ $config =Config::getInstance();
 
 <div id="tablet-window" style="margin:0;padding:0">
     <div id="tablet-layout">
-        <div data-options="region:'west',split:true" title="<?php _e('Activities on this journey');?>" style="width:40%;">
+        <div data-options="region:'west',split:true,minWidth:50" title="<?php _e('Activities on this journey');?>" style="width:40%;">
             <!-- Tabla desplegable para la entrada de datos desde el tablet -->
             <table id="tablet-datagrid" style="margin:0;padding:0;"></table>
         </div>
@@ -46,19 +46,19 @@ $config =Config::getInstance();
                         <input id="tdialog-Tanda" name="Tanda" type="hidden"> <!-- Tanda name -->
                         <input id="tdialog-Observacioens" name="Observaciones" type="hidden">
                         <input id="tdialog-Operation" name="Operation" type="hidden" value="update">
-                        <input id="tdialog-FaltaUpBtn" type="button" value="<?php _e('Fault');?>" onclick="tablet_up('#tdialog-Faltas');" class="tablet_button tb_falta">
-                        <input id="tdialog-FaltaDownBtn" type="button" value="<?php _e('Fault');?> -" onclick="tablet_down('#tdialog-Faltas');">
-                        <input id="tdialog-RehuseUpBtn" type="button" value="<?php _e('Refusal');?>" onclick="tablet_up('#tdialog-Rehuses')" class="tablet_button tb_rehuse">
-                        <input id="tdialog-RehuseDownBtn" type="button" value="<?php _e('Refusal');?> -" onclick="tablet_down('#tdialog-Rehuses');">
-                        <input id="tdialog-TocadoUpBtn" type="button" value="<?php _e('Touch');?>" onclick="tablet_up('#tdialog-Tocados');" class="tablet_button tb_tocado">
-                        <input id="tdialog-TocadoDownBtn" type="button" value="<?php _e('Touch');?> -" onclick="tablet_down('#tdialog-Tocados');">
+                        <input id="tdialog-FaltaUpBtn" type="button" value="<?php _e('Fault');?>" onclick="tablet_up('#tdialog-Faltas',true);" class="tablet_button tb_falta">
+                        <input id="tdialog-FaltaDownBtn" type="button" value="<?php _e('Fault');?> -" onclick="tablet_down('#tdialog-Faltas',true);">
+                        <input id="tdialog-RehuseUpBtn" type="button" value="<?php _e('Refusal');?>" onclick="tablet_up('#tdialog-Rehuses',true)" class="tablet_button tb_rehuse">
+                        <input id="tdialog-RehuseDownBtn" type="button" value="<?php _e('Refusal');?> -" onclick="tablet_down('#tdialog-Rehuses',true);">
+                        <input id="tdialog-TocadoUpBtn" type="button" value="<?php _e('Touch');?>" onclick="tablet_up('#tdialog-Tocados',true);" class="tablet_button tb_tocado">
+                        <input id="tdialog-TocadoDownBtn" type="button" value="<?php _e('Touch');?> -" onclick="tablet_down('#tdialog-Tocados',true);">
                         <input id="tdialog-StartStopBtn" type="button" value="Start" onclick="tablet_startstop();" class="tablet_button tb_crono">
                         <input id="tdialog-ResetBtn" type="button" value="     " onclick="tablet_resetchrono();" class="tablet_button tb_reset">
                         <input id="tdialog-SalidaBtn" type="button" value="<?php _e('Begin');?>" onclick="tablet_salida();" class="tablet_button tb_salida">
                         <input id="tdialog-AcceptBtn" type="button" value="<?php _e('Accept');?>" onclick="tablet_accept();" class="tablet_button tb_accept">
                         <input id="tdialog-CancelBtn" type="button" value="<?php _e('Cancel');?>" onclick="tablet_cancel();" class="tablet_button tb_cancel">
-                        <input id="tdialog-NoPresentadoBtn" type="button" value="<?php _e('Not Present');?>" onclick="tablet_np();" class="tablet_button tb_nopresentado">
-                        <input id="tdialog-EliminadoBtn" type="button" value="<?php _e('Eliminated');?>" onclick="tablet_elim('#tdialog-Eliminado');" class="tablet_button tb_eliminado">
+                        <input id="tdialog-NoPresentadoBtn" type="button" value="<?php _e('Not Present');?>" onclick="tablet_np(true);" class="tablet_button tb_nopresentado">
+                        <input id="tdialog-EliminadoBtn" type="button" value="<?php _e('Eliminated');?>" onclick="tablet_elim(true);" class="tablet_button tb_eliminado">
                         <input id="tdialog-0" type="button" value="0" class="tablet_numbers" onclick="tablet_add(0);">
                         <input id="tdialog-1" type="button" value="1" class="tablet_numbers" onclick="tablet_add(1);">
                         <input id="tdialog-2" type="button" value="2" class="tablet_numbers" onclick="tablet_add(2);">
@@ -72,11 +72,12 @@ $config =Config::getInstance();
                         <input id="tdialog-Del" type="button" value="." class="tablet_numbers" onclick="tablet_dot();">
                         <input id="tdialog-Dot" type="button" value="Del" class="tablet_numbers" onclick="tablet_del();">
                         <label id="tdialog-InfoLbl" for="tdialog-InfoLbl" class="tablet_infoheader">Informacion de prueba, jornada y manga</label>
-                        <label id="tdialog-NumberLbl" for="tdialog-NumberLbl" class="tablet_infoheader"><p>Num</p></label>
+                        <label id="tdialog-NumberLbl" for="tdialog-NumberLbl" class="tablet_infoheader"><br/>Num<br/></label>
                         <label id="tdialog-DorsalLbl" for="tdialog-Dorsal" class="tablet_info">Dorsal</label>
                         <input id="tdialog-Dorsal" type="text" readonly="readonly" name="<?php _e('Dorsal');?>" class="tablet_info"/>
                         <label id="tdialog-NombreLbl" for="tdialog-Nombre" class="tablet_info"><?php _e('Name'); ?></label>
                         <input id="tdialog-Nombre" type="text" readonly="readonly" name="Nombre" class="tablet_info"/>
+                        <input id="tdialog-NombreLargo" name="NombreLargo" type="hidden">
                         <label id="tdialog-GuiaLbl" for="tdialog-Guia" class="tablet_info"><?php _e('Handler'); ?></label>
                         <input id="tdialog-Guia" type="text" readonly="readonly" name="NombreGuia" class="tablet_info"/>
                         <label id="tdialog-ClubLbl" for="tdialog-Club" class="tablet_info"><?php _e('Club'); ?></label>
@@ -96,6 +97,7 @@ $config =Config::getInstance();
                         <label id="tdialog-TiempoLbl" for="tdialog-Tiempo"><?php _e('Time'); ?></label>
                         <span id="tdialog-timestamp" style="display:none"></span>
                         <input id="tdialog-Tiempo" type="text" readonly="readonly" value="00.00" name="Tiempo" class="tablet_data"/>
+                        <input id="tdialog-TIntermedio" name="TIntermedio" type="hidden">
                         <label id="tdialog-NoPresentadoLbl" for="tdialog-NoPresentadoStr"><?php _e('No Pr'); ?>.</label>
                         <input id="tdialog-NoPresentado" type="hidden" name="NoPresentado" value="0"/>
                         <input id="tdialog-NoPresentadoStr" type="text" readonly="readonly" value="" name="NoPresentadoStr" class="tablet_data"/>
@@ -117,7 +119,7 @@ $config =Config::getInstance();
 <div id="tablet-toolbar" style="width:100%;display:inline-block">
     <span style="float:left">
         <a id="tablet-reloadBtn" href="#" class="easyui-linkbutton"
-           data-options="iconCls:'icon-reload'" onclick="$('#tablet-datagrid').datagrid('reload');"><?php _e('Refresh'); ?></a>
+           data-options="iconCls:'icon-reload'" onclick="doBeep();$('#tablet-datagrid').datagrid('reload');"><?php _e('Refresh'); ?></a>
    		<input id="tablet-datagrid-search" type="text" value="---- Dorsal ----" class="search_textfield"
             onchange="tablet_editByDorsal();"/>
     </span>
@@ -146,6 +148,24 @@ $config =Config::getInstance();
     });
 
     $('#tablet-layout').layout({fit:true});
+    $('#tablet-layout').layout('panel','west').panel({
+        onExpand: function() {
+            tablet_config.DataEntryEnabled=false;
+            $('#tdialog-fieldset').prop('disabled',true);
+            // retrieve original data from parent datagrid
+            var dgname=$('#tdialog-Parent').val();
+            var dg=$(dgname);
+            // refresh layout
+            var h=dg.datagrid('getPanel').panel('options').height;
+            var w=dg.datagrid('getPanel').panel('options').width;
+            setTimeout(function() {dg.datagrid('resize',{height:h,width:w})},0);
+        },
+        onCollapse: function () {
+            tablet_config.DataEntryEnabled=true;
+            $('#tdialog-fieldset').prop('disabled',false);
+        }
+    });
+
 
     $('#tablet-datagrid').datagrid({
         // propiedades del panel asociado
@@ -183,7 +203,7 @@ $config =Config::getInstance();
             { field:'Grado',	hidden:true },
             { field:'Sesion',	hidden:true },
             { field:'Tipo',	    hidden:true },
-            { field:'Horario',	width:50, sortable:false, align:'center', title:'<?php _e('Time');?>',styler:tandasStyler },
+            { field:'Horario',	width:50, sortable:false, align:'center', title:'<?php _e('Hour');?>',styler:tandasStyler },
             { field:'Nombre',	width:300, sortable:false, align:'left',title:'<?php _e('Activity');?>',styler:tandasStyler},
             { field:'Comentario',	width:100, sortable:false, align:'left',title:'<?php _e('Comments');?>',styler:tandasStyler}
         ]],
@@ -207,11 +227,11 @@ $config =Config::getInstance();
             dg.datagrid('options').expandedRow=idx;
             // update session dataassistant
             tablet_updateSession(row);
-            if (row.Tipo!=0) tablet_showPerrosByTanda(idx,row);
+            if (row.Tipo!=0) setTimeout( function(){tablet_showPerrosByTanda(idx,row)},0);
         },
         onCollapseRow: function(idx,row) {
             row.expanded=0;
-            var dg="tablet-datagrid-" + parseInt(row.ID);
+            var dg="#tablet-datagrid-" + parseInt(row.ID);
             $(dg).remove();
             doBeep();
         }
@@ -224,7 +244,6 @@ $config =Config::getInstance();
         var mySelfstr='#tablet-datagrid-'+row.ID;
         var mySelf=$(mySelfstr);
         mySelf.datagrid({
-            numRows: 0, // added by JAMC to store number of dogs
             method: 'get',
             url: '/agility/server/database/tandasFunctions.php',
             queryParams: {
@@ -246,8 +265,6 @@ $config =Config::getInstance();
             autoRowHeight: false,
             remote:true,
             idField:'Dorsal',
-            view: scrollview,
-            pageSize: 20,
             columns:[[
                 { field:'Parent',		width:0, hidden:true }, // self reference to row index
                 { field:'Prueba',		width:0, hidden:true }, // extra field to be used on form load/save
@@ -263,15 +280,17 @@ $config =Config::getInstance();
                 { field:'NombreEquipo',	width:20, align:'center',	title: '<?php _e('Team');?>' },
                 { field:'Dorsal',		width:10, align:'center',	title: '<?php _e('Dorsal');?>', styler:checkPending },
                 { field:'Nombre',		width:20, align:'left',		title: '<?php _e('Name');?>', formatter:formatBold},
+                { field:'NombreLargo',	width:0, hidden:true },
                 { field:'Celo',			width:8, align:'center',	title: '<?php _e('Heat');?>', formatter:formatCelo},
                 { field:'NombreGuia',	width:35, align:'right',	title: '<?php _e('Handler');?>' },
                 { field:'NombreClub',	width:25, align:'right',	title: '<?php _e('Club');?>' },
-                { field:'Categoria',	width:10, align:'center',	title: '<?php _e('Cat');?>.' },
-                { field:'Grado',		width:10, align:'center',	title: '<?php _e('Grade');?>' },
+                { field:'Categoria',	width:10, align:'center',	title: '<?php _e('Cat');?>.' ,formatter:formatCategoria},
+                { field:'Grado',		width:10, align:'center',	title: '<?php _e('Grade');?>', formatter:formatGrado },
                 { field:'Faltas',		width:5, align:'center',	title: 'F'},
                 { field:'Rehuses',		width:5, align:'center',	title: 'R'},
                 { field:'Tocados',		width:5, align:'center',	title: 'T'},
                 { field:'Tiempo',		width:15, align:'right',	title: '<?php _e('Time');?>'	},
+                { field:'TIntermedio',	width:0, hidden:true },
                 { field:'Eliminado',	width:5, align:'center',	formatter:formatEliminado,	title: 'EL.'},
                 { field:'NoPresentado',	width:5, align:'center',	formatter:formatNoPresentado,	title: 'NP'},
                 { field:'Observaciones',width:0, hidden:true }
@@ -285,14 +304,15 @@ $config =Config::getInstance();
                 data.RowIndex=idx; // store row index
                 $('#tdialog-form').form('load',data);
                 setDataEntryEnabled(true);
-                fillPending(mySelf,data.RowIndex);
+                tablet_markSelectedDog(data.RowIndex);
             },
             onResize:function(){
                 tbt_dg.datagrid('fixDetailRowHeight',index);
             },
             onLoadSuccess:function(data){
                 if (!data.total) return; // subgrid returns an empty array. Do nothing
-                mySelf.datagrid('options').numRows=data.total; // store total number of rows
+                // populate data entry datagrid with loaded data
+                $('#tdialog-tnext').datagrid('loadData',data.rows);
                 // show/hide team name
                 if (isTeamByJornada(workingData.datosJornada) ) mySelf.datagrid('showColumn','NombreEquipo');
                 else  mySelf.datagrid('hideColumn','NombreEquipo');
@@ -339,7 +359,6 @@ $config =Config::getInstance();
             var np=parseInt($('#tdialog-NoPresentado').val());
             $('#tdialog-EliminadoStr').val((el==0)?"":"EL");
             $('#tdialog-NoPresentadoStr').val((np==0)?"":"NP");
-            $('#tdialog-StartStopBtn').val("Start");
             tablet_putEvent('llamada',
                     { // setup initial data for event,
                         'TimeStamp'     : Date.now() - startDate,
@@ -351,7 +370,16 @@ $config =Config::getInstance();
                         'Eliminado'		: el,
                         'Celo'			: $('#tdialog-Celo').val(),
                         'Dorsal'		: $('#tdialog-Dorsal').val(),
-                        'Value'         : 0
+                        'Value'         : 0,
+                        // include additional textual info
+                        'Numero'        : 1+parseInt($('#tdialog-RowIndex').val()),
+                        'Nombre'        : $('#tdialog-Nombre').val(),
+                        'NombreLargo'   : $('#tdialog-NombreLargo').val(),
+                        'NombreGuia'    : $('#tdialog-Guia').val(),
+                        'NombreClub'    : $('#tdialog-Club').val(),
+                        'NombreEquipo'  : $('#tdialog-NombreEquipo').val(),
+                        'Categoria'     : $('#tdialog-Categoria').val(),
+                        'Grado'         : $('#tdialog-Grado').val()
                     }
             ) ;
         }
@@ -365,7 +393,7 @@ $config =Config::getInstance();
             interval: 50,
             showMode: 2,
             onUpdate: function(elapsed,running,pause) {
-                $('#tdialog-Tiempo').val(parseFloat(elapsed/1000).toFixed((running)?1:ac_config.numdecs));
+                $('#tdialog-Tiempo').val(toFixedT(parseFloat(elapsed/1000),(running)?1:ac_config.numdecs));
                 return true;
             }
         });
@@ -374,18 +402,27 @@ $config =Config::getInstance();
     // creamos la tabla de proximos a salir
     $('#tdialog-tnext').datagrid({
         pagination: false,
-        rownumbers: false,
+        rownumbers: true,
         fit:true,
         fitColumns: true,
         singleSelect: true,
         autoRowHeight: true,
         columns:[[
-            { field:'Num',	width:'10%', align:'right',	title: '<?php _e('Num');?>' },
-            { field:'Dorsal',width:'15%', align:'right',	title: '<?php _e('Dorsal');?>' },
+            /*{ field:'Num',	width:'10%', align:'right',	title: '<?php _e('Num');?>' },*/
+            { field:'Dorsal',width:'10%', align:'right',	title: '<?php _e('Dorsal');?>' },
             { field:'Nombre',width:'25%', align:'right',	title: '<?php _e('Name');?>' },
-            { field:'Guia',	width:'50%', align:'right',	title: '<?php _e('Handler');?>' }
+            { field:'NombreGuia',	width:'35%', align:'right',	title: '<?php _e('Handler');?>' },
+            { field:'NombreClub',	width:'20%', align:'right',	title: '<?php _e('Club');?>' }
         ]],
         onDblClickRow: function(index,row) {
+            // check for store before change dog
+            if (parseInt(ac_config.tablet_dblclick)==1){
+                // retrieve parent datagrid to update results
+                var dgname = $('#tdialog-Parent').val();
+                var dg = $(dgname);
+                tablet_save(dg);
+            }
+            // and go to selected dog
             $('#tablet-datagrid-search').val(row.Dorsal);
             tablet_editByDorsal();
         }
@@ -403,27 +440,27 @@ $config =Config::getInstance();
     doLayout(dg,"#tdialog-RehuseUpBtn",		170,	5,		30,		75	);
     doLayout(dg,"#tdialog-RehuseDownBtn",	145,	5,		15,		20	);
     doLayout(dg,"#tdialog-TocadoUpBtn",		5,		85,     30,		20	);
-    doLayout(dg,"#tdialog-TocadoDownBtn",	45,		85,     15,		20	);
-    doLayout(dg,"#tdialog-SalidaBtn",		145,	85,		15,		13	);
-    doLayout(dg,"#tdialog-ResetBtn",		145,	102,	15,		13	);
-    doLayout(dg,"#tdialog-StartStopBtn",	174,	88,		22,		22	);
+    doLayout(dg,"#tdialog-TocadoDownBtn",	42,		85,     15,		20	);
+    doLayout(dg,"#tdialog-SalidaBtn",		147,	88,		15,		20	);
+    doLayout(dg,"#tdialog-ResetBtn",		60,	    87,	    15,		15	);
+    doLayout(dg,"#tdialog-StartStopBtn",	174,	87,		22,		22	);
     doLayout(dg,"#tdialog-AcceptBtn",		170,	115,	30,		25	);
-    doLayout(dg,"#tdialog-CancelBtn",		145,	120,	15,		20	);
+    doLayout(dg,"#tdialog-CancelBtn",		147,	117,	15,		20	);
     doLayout(dg,"#tdialog-NoPresentadoBtn",	70,		5,		27,		20	);
     doLayout(dg,"#tdialog-EliminadoBtn",	108,	5,		27,		20	);
-    doLayout(dg,"#tdialog-Next",	        5,	    110,	65,		30	);
-    doLayout(dg,"#tdialog-1",				75,		80,		20,		15	);
-    doLayout(dg,"#tdialog-2",				95,		80,		20,		15	);
-    doLayout(dg,"#tdialog-3",				115,	80,		20,		15	);
-    doLayout(dg,"#tdialog-4",				75,		95,		20,		15	);
-    doLayout(dg,"#tdialog-5",				95,		95,		20,		15	);
-    doLayout(dg,"#tdialog-6",				115,	95,		20,		15	);
-    doLayout(dg,"#tdialog-7",				75,		110,	20,		15	);
-    doLayout(dg,"#tdialog-8",				95,		110,	20,		15	);
-    doLayout(dg,"#tdialog-9",				115,	110,	20,		15	);
-    doLayout(dg,"#tdialog-Del",				115,	125,	20,		15	);
-    doLayout(dg,"#tdialog-0",				95,		125,	20,		15	);
-    doLayout(dg,"#tdialog-Dot",				75,		125,	20,		15	);
+    doLayout(dg,"#tdialog-Next",	        5,	    110,	70,		30	);
+    doLayout(dg,"#tdialog-1",				80,		80,		20,		15	);
+    doLayout(dg,"#tdialog-2",				100,	80,		20,		15	);
+    doLayout(dg,"#tdialog-3",				120,	80,		20,		15	);
+    doLayout(dg,"#tdialog-4",				80,		95,		20,		15	);
+    doLayout(dg,"#tdialog-5",				100,	95,		20,		15	);
+    doLayout(dg,"#tdialog-6",				120,	95,		20,		15	);
+    doLayout(dg,"#tdialog-7",				80,		110,	20,		15	);
+    doLayout(dg,"#tdialog-8",				100,	110,	20,		15	);
+    doLayout(dg,"#tdialog-9",				120,	110,	20,		15	);
+    doLayout(dg,"#tdialog-Del",				120,	125,	20,		15	);
+    doLayout(dg,"#tdialog-0",				100,	125,	20,		15	);
+    doLayout(dg,"#tdialog-Dot",				80,		125,	20,		15	);
     doLayout(dg,"#tdialog-DorsalLbl",		53,		38,		10,		7	);
     doLayout(dg,"#tdialog-Dorsal",			65,		37,		18,		7	);
     doLayout(dg,"#tdialog-NombreLbl",		85,	    38,		20,		7   );

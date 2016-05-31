@@ -2,7 +2,7 @@
 /*
  chrono/index.php
 
- Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+ Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
  This program is free software; you can redistribute it and/or modify it under the terms
  of the GNU General Public License as published by the Free Software Foundation;
@@ -64,6 +64,7 @@ require_once(__DIR__."/../server/upgradeVersion.php");
 <script src="/agility/lib/jquery-fittext-1.2.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/lib/sprintf.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/common.js.php" type="text/javascript" charset="utf-8" > </script>
+<script src="/agility/scripts/competicion.js.php" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/scripts/events.js" type="text/javascript" charset="utf-8" > </script>
 <script src="/agility/chrono/chrono.js.php" type="text/javascript" charset="utf-8" > </script>
 
@@ -170,7 +171,7 @@ function chrono_accept() {
 		return;
 	}
 	// store selected data into global structure
-	initWorkingData(sid); // TODO: replace with proper setupWorkingData call
+	initWorkingData(sid,chrono_eventManager);
 	var page='/agility/chrono/chrono.inc.php';
 	$('#chrono-dialog').dialog('close');
 	$('#chrono-contenido').load(	

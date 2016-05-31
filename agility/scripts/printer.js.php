@@ -1,7 +1,7 @@
 /*
 printer.js
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -83,7 +83,7 @@ function print_ordenTandas() {
  */
 function print_ordenSalida() {
     var url='/agility/server/pdf/print_ordenDeSalida.php';
-    if (isJornadaEq4()) url='/agility/server/pdf/print_ordenSalidaEquipos4.php';
+    if (isJornadaEqConjunta()) url='/agility/server/pdf/print_ordenSalidaEquipos4.php';
     $.fileDownload(
         url,
         {
@@ -273,7 +273,7 @@ function print_commonDesarrollo(def) {
     $.messager.radio(
         '<?php _e('Print form'); ?>',
         '<?php _e('Select document type to be generated'); ?>:',
-        isJornadaEq4()?options4:options,
+        isJornadaEqConjunta()?options4:options,
         function(r){
             if (!r) return false;
             if (!checkCanPrint(r)) return false;
@@ -302,8 +302,8 @@ function print_commonDesarrollo(def) {
 function clasificaciones_printPodium() {
 	var ronda=$('#resultados-info-ronda').combogrid('grid').datagrid('getSelected');
 	var url='/agility/server/pdf/print_podium.php';
-    if (isJornadaEq3()) url='/agility/server/pdf/print_podium_eq3.php';
-    if (isJornadaEq4()) url='/agility/server/pdf/print_podium_eq4.php';
+    if (isJornadaEqMejores()) url='/agility/server/pdf/print_podium_eq3.php';
+    if (isJornadaEqConjunta()) url='/agility/server/pdf/print_podium_eq4.php';
 	if (ronda==null) {
     	$.messager.alert('<?php _e("Error"); ?>','<?php _e("There is no selected round on this journey"); ?>',"warning");
     	return false; // no way to know which ronda is selected
@@ -330,8 +330,6 @@ function clasificaciones_printPodium() {
  * Imprime los resultados finales separados por categoria y grado, tal y como pide la RSCE
  */
 function clasificaciones_printCanina() {
-	// Client-side excel conversion
-	// $('#resultados-datagrid').datagrid('toExcel',"clasificaciones.xls");
 	
 	// Server-side excel generation
 	var ronda=$('#resultados-info-ronda').combogrid('grid').datagrid('getSelected');
@@ -405,8 +403,8 @@ function clasificaciones_printEtiquetas(flag,start,list) {
 function clasificaciones_printClasificacion() {
 	var ronda=$('#resultados-info-ronda').combogrid('grid').datagrid('getSelected');
 	var url='/agility/server/pdf/print_clasificacion.php';
-    if (isJornadaEq3()) url='/agility/server/pdf/print_clasificacion_eq3.php';
-    if (isJornadaEq4()) url='/agility/server/pdf/print_clasificacion_eq4.php';
+    if (isJornadaEqMejores()) url='/agility/server/pdf/print_clasificacion_equipos.php';
+    if (isJornadaEqConjunta()) url='/agility/server/pdf/print_clasificacion_equipos.php';
 	var mode=$('#resultados-selectCategoria').combobox('getValue');
 	if (ronda==null) {
         $.messager.alert('<?php _e("Error"); ?>','<?php _e("There is no selected round on this journey"); ?>',"warning");

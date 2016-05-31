@@ -2,7 +2,7 @@
 /*
 Equipos.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -300,7 +300,7 @@ class Equipos extends DBObject {
         /*select*/ "DISTINCT Resultados.Prueba,Resultados.Jornada, Resultados.Dorsal, Resultados.Perro,
                             Resultados.Nombre, Resultados.Raza, Resultados.Licencia, Resultados.Categoria, Resultados.Grado,
                             Resultados.Celo,Resultados.NombreGuia,Resultados.NombreClub, Resultados.Equipo,
-                            PerroGuiaClub.Club AS Club, PerroGuiaClub.Guia AS Guia,PerroGuiaClub.LogoClub AS Logo,
+                            PerroGuiaClub.Club AS Club, PerroGuiaClub.Guia AS Guia,PerroGuiaClub.LogoClub AS LogoClub,
                             '$tname' AS NombreEquipo",
             /* from */	"Resultados,PerroGuiaClub",
             /* where */ "( PerroGuiaClub.ID = Resultados.Perro)	AND ( Resultados.Jornada={$teamobj->Jornada} ) AND ( Resultados.Equipo=$team )",
@@ -320,8 +320,19 @@ class Equipos extends DBObject {
         $j=$this->__getObject("Jornadas",$this->jornadaID);
         $max=4;
         $min=0;
-        if ( intval($j->Equipos3) !=0 ) $min=3;
-        if ( intval($j->Equipos4) !=0 ) $min=4;
+		switch(intval($j->Equipos3)) {
+			case 1:$min=3;$max=4; break; // old style 3 best of 4
+			case 2:$min=2;$max=3; break; // 2 besto of 3
+			case 3:$min=3;$max=4; break; // 3 best of 4
+			default: break;
+		}
+		switch(intval($j->Equipos4)) {
+			case 1:$min=4;$max=4; break; // old style 4 combined
+			case 2:$min=2;$max=2; break; // 2 combined
+			case 3:$min=3;$max=3; break; // 3 combined
+			case 4:$min=4;$max=4; break; // 4 combined
+			default: break;
+		}
         if ($min==0) return "La jornada {$j->jornadaID} - '{$j->Nombre}' no tiene declaradas pruebas por equipos";
         $res=array();
         $res['default']=array();

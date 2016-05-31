@@ -2,7 +2,7 @@
 /*
 print_equiposByJornada.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -88,7 +88,7 @@ class EntradaDeDatosEquipos4 extends PrintCommon {
 		$this->print_commonHeader(_("Data entry (Teams-4)"));
 
         // pintamos datos de la jornada
-        $this->SetFont('Helvetica','B',12); // Helvetica bold 15
+        $this->SetFont($this->getFontName(),'B',12); // bold 15
         $str  = $this->jornada->Nombre . " - " . $this->jornada->Fecha;
         $this->Cell(90,9,$str,0,0,'L',false);
 
@@ -113,9 +113,10 @@ class EntradaDeDatosEquipos4 extends PrintCommon {
 	
 	function printTeamInfo($rowcount,$index,$team,$members) {
         // evaluate logos
-        $logos=array('null.png','null.png','null.png','null.png');
+        $nullpng=getIconPath($this->federation->get('Name'),'null.png');
+        $logos=array($nullpng,$nullpng,$nullpng,$nullpng);
         if ($team['Nombre']==="-- Sin asignar --") {
-            $logos[0]='agilitycontest.png';
+            $logos[0]=getIconPath($this->federation->get('Name'),'agilitycontest.png');
         } else {
             $count=0;
             foreach($members as $miembro) {
@@ -136,9 +137,9 @@ class EntradaDeDatosEquipos4 extends PrintCommon {
             $this->SetX(22);
             $this->ac_row($id,8);
             $this->Cell(6,4,$perro['Dorsal'],'LTBR',0,'L',true);
-            $this->SetFont('Helvetica','B',8);
+            $this->SetFont($this->getFontName(),'B',8);
             $this->Cell(13,4,$perro['Nombre'],'LTBR',0,'C',true);
-            $this->SetFont('Helvetica','',7);
+            $this->SetFont($this->getFontName(),'',7);
             $this->Cell(28,4,$perro['NombreGuia'],'LTBR',0,'R',true);
             $this->Ln(4);
         }
@@ -164,7 +165,7 @@ class EntradaDeDatosEquipos4 extends PrintCommon {
         $this->Cell(15,10,"",'R',0,'L',true);
         $this->Cell(29,10,"",'',0,'L',true);
         $this->SetXY(71,7+$y+1);
-        $this->SetFont('Helvetica','I',8); // italic 8px
+        $this->SetFont($this->getFontName(),'I',8); // italic 8px
         $this->Cell(49,2.5,_("Faults"),0,0,'L',false);
         $this->Cell(20,2.5,_("Refusals"),0,0,'L',false);
         $this->Cell(15,2.5,_("Touchs"),0,'L',false);
@@ -224,3 +225,4 @@ try {
 	die ("Error accessing database: ".$e->getMessage());
 };
 ?>
+

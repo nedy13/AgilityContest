@@ -5,7 +5,7 @@ $config = Config::getInstance();
 /*
 public_css.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
@@ -27,16 +27,15 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
 .pb_floatingheader {
     margin-top:0px;
     margin-bottom:0px;
-    padding:5px;
+    padding:5px 5px 0px 5px;
     background-color: <?php echo $config->getEnv('vw_hdrbg1')?>;
     color: <?php echo $config->getEnv('vw_hdrfg1')?>;
     font-weight: bold;
     font-style: italic;
-    font-size:1.8em;
+    font-size:1.5vw;
 }
 
 .pb_floatingfooter {
-    height:60px;
     margin-top:0px;
     margin-bottom:0px;
     padding:5px;
@@ -44,7 +43,7 @@ if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth F
     color: <?php echo $config->getEnv('vw_hdrfg3')?>;
     font-weight: bold;
     font-style: italic;
-    font-size:1.8em;
+    font-size:1.5vw;
 }
 /************************** Elementos de la tabla de inscritos a la prueba ************/
 
@@ -62,7 +61,7 @@ td.pb_club {
 /*************** cabecera de ventana de resultados ************ */
 .pb_trs {
     width:100%;
-    padding:5px;
+    padding:0px 5px 5px 5px;
     background-color: <?php echo $config->getEnv('vw_hdrbg1')?>;
     color: <?php echo $config->getEnv('vw_hdrfg1')?>;
     font-weight: bold;
@@ -71,11 +70,23 @@ td.pb_club {
 }
 .pb_trs th {
     text-align:left;
-    font-size: 18px;
+    font-size: 1.1vw;
 }
 .pb_trs td {
     text-align:right;
-    font-size: 12px;
+    font-size: 1.0vw;
+}
+
+/* tip for fix data size in smartphones ----------- */
+@media only screen and (max-width: 760px) {
+    .pb_trs th {
+        text-align:left;
+        font-size: 1.4vw;
+    }
+    .pb_trs td {
+        text-align:right;
+        font-size: 1.3vw;
+    }
 }
 
 /************** datos de las tablas de clasificaciones por equipos */

@@ -1,7 +1,7 @@
 <!-- 
 frm_clasificaciones.php
 
-Copyright 2013-2015 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
+Copyright  2013-2016 by Juan Antonio Martinez ( juansgaviota at gmail dot com )
 
 This program is free software; you can redistribute it and/or modify it under the terms 
 of the GNU General Public License as published by the Free Software Foundation; 
@@ -35,10 +35,9 @@ $('#seljornada-window').window({
 			return;
 		}
 		page="/agility/console/frm_clasificaciones2.php";
-		if (workingData.datosJornada.Equipos3==1) page="/agility/console/frm_clasificaciones_eq3.php";
-		if (workingData.datosJornada.Equipos4==1) page="/agility/console/frm_clasificaciones_eq3.php"; // 4 & 3 are the same frame
-		if (workingData.datosJornada.Open==1) page="/agility/console/frm_clasificaciones2.php";
-		if (workingData.datosJornada.KO==1) page="/agility/console/resultados_ko.php";
+		if (isJornadaEquipos()) page="/agility/console/frm_clasificaciones_equipos.php";
+		if (workingData.datosJornada.Open!=0) page="/agility/console/frm_clasificaciones2.php";
+		if (workingData.datosJornada.KO!=0) page="/agility/console/resultados_ko.php";
 		loadContents(page,'<?php _e('Results & Scores');?>');
 	} 
 }).window('open');
